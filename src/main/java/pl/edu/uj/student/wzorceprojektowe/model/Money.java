@@ -12,6 +12,12 @@ public class Money {
     private final String currency;
     private final BigDecimal amount;
 
+    @JsonCreator
+    public Money(String currency, double amount) {
+        this.currency = currency;
+        this.amount = new BigDecimal(amount);
+    }
+
     private Money(String currency, BigDecimal amount) {
         this.amount = amount;
         this.currency = currency;

@@ -3,9 +3,7 @@ package pl.edu.uj.student.wzorceprojektowe.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.edu.uj.student.wzorceprojektowe.model.Offer;
-import pl.edu.uj.student.wzorceprojektowe.model.db.OfferDatabaseRecord;
 import pl.edu.uj.student.wzorceprojektowe.model.Vendor;
-import pl.edu.uj.student.wzorceprojektowe.model.db.VendorDatabaseRecord;
 import pl.edu.uj.student.wzorceprojektowe.repository.OfferRepository;
 import pl.edu.uj.student.wzorceprojektowe.repository.VendorRepository;
 
@@ -26,7 +24,6 @@ public class OfferController {
     @GetMapping("/{id}")
     public ResponseEntity<Offer> byId(@PathVariable Long id) {
         return offerRepository.findById(id)
-                .map(OfferDatabaseRecord::toOffer)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -37,29 +34,17 @@ public class OfferController {
         if (name.isBlank() && vendor.isBlank()) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.ok(offerRepository
-                .findByNameContainingIgnoreCaseAndVendor_NameContainingIgnoreCase(name, vendor)
-                .stream().map(OfferDatabaseRecord::toOffer).toList());
+        return ResponseEntity.ok(offerRepository.search(name, vendor));
     }
 
     @PostMapping
     public ResponseEntity<Offer> create(@RequestBody Offer offer) {
-        VendorDatabaseRecord vendorEntity = resolveVendor(offer.vendor());
-        if (vendorEntity == null) {
+        if (offer.vendor() == null || offer.vendor().name() == null || offer.vendor().name().isBlank()
+                || offer.name() == null || offer.name().isBlank() || offer.price() == null) {
             return ResponseEntity.badRequest().build();
         }
-        OfferDatabaseRecord saved = offerRepository.save(new OfferDatabaseRecord(offer, vendorEntity));
-        return ResponseEntity.ok(saved.toOffer());
-    }
-
-    private VendorDatabaseRecord resolveVendor(Vendor vendor) {
-        if (vendor == null || (vendor.name() == null && vendor.id() == null)) {
-            return null;
-        }
-        if (vendor.id() != null) {
-            return vendorRepository.findById(vendor.id()).orElse(null);
-        }
-        return vendorRepository.findByNameIgnoreCase(vendor.name())
-                .orElseGet(() -> vendorRepository.save(new VendorDatabaseRecord(vendor.name())));
+        Vendor vendor = vendorRepository.findOrCreate(offer.vendor().name());
+        return ResponseEntity.ok(offerRepository.insert(
+                new Offer(offer.name(), vendor, offer.price(), offer.description())));
     }
 }

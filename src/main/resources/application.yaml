@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: wzorceprojektowe
+
+  datasource:
+    url: jdbc:sqlite:offers.db
+    driver-class-name: org.sqlite.JDBC
+
+  sql:
+    init:
+      mode: always

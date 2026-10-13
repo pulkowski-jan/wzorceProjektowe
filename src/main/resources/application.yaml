@@ -1,6 +1,6 @@
 spring:
   application:
-    name: wzorceprojektowe
+    name: Wzorowy System Biletowy
 
   datasource:
     url: jdbc:sqlite:offers.db
@@ -9,3 +9,12 @@ spring:
   sql:
     init:
       mode: always
+
+  output:
+    ansi:
+      enabled: detect
+
+server:
+  port: 8081
+
+

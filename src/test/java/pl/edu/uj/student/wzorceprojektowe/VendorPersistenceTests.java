@@ -40,7 +40,7 @@ class VendorPersistenceTests {
     void resolvingVendorIsIdempotentAndOffersUseName() {
         var vendor = vendors.findOrCreate("Reusable Vendor");
         assertEquals(vendor, vendors.findOrCreate("Reusable Vendor"));
-        offers.insert(new Offer("Test Concert", vendor, new Money("PLN", 12), "test"));
+        offers.insert(new Offer("", "Test Concert", vendor, new Money("PLN", 12), "test", 1));
         var found = offers.search("Test Concert", "Reusable Vendor");
         assertEquals(1, found.size());
         assertEquals(vendor, found.getFirst().vendor());

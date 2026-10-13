@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -16,20 +17,20 @@ public class OfferRepository {
 
   private static final String SELECT_BY_ID_TEMPLATE =
       """
-            SELECT o.id, o.name, o.currency, o.amount, o.description,
+            SELECT o.id, o.name, o.currency, o.amount, o.description, o.quantity,
                    v.name AS vendor_name
             FROM offer o JOIN vendor v ON o.vendor_id = v.id
             WHERE o.id = ?
             """;
   private static final String SEARCH_TEMPLATE =
       """
-            SELECT o.id, o.name, o.currency, o.amount, o.description,
+            SELECT o.id, o.name, o.currency, o.amount, o.description, o.quantity,
                    v.name AS vendor_name
             FROM offer o JOIN vendor v ON o.vendor_id = v.id
-            WHERE o.name LIKE ? AND v.name LIKE ?
+            WHERE o.name LIKE ? AND v.name LIKE ? AND o.quantity > 0
             """;
   public static final String INSERT_TEMPLATE =
-      "INSERT INTO offer(name, vendor_id, currency, amount, description) VALUES (?, (SELECT id FROM vendor WHERE name = ?), ?, ?, ?)";
+      "INSERT INTO offer(id, name, vendor_id, currency, amount, description, quantity) VALUES (?, ?, (SELECT id FROM vendor WHERE name = ?), ?, ?, ?, ?)";
   public static final String COUNT_QUERY = "SELECT COUNT(*) FROM offer";
 
   private final JdbcTemplate jdbc;
@@ -51,14 +52,23 @@ public class OfferRepository {
   }
 
   public Offer insert(Offer offer) {
+    String offerId = UUID.randomUUID().toString();
     jdbc.update(
         INSERT_TEMPLATE,
+        offerId,
         offer.name(),
         offer.vendor().name(),
         offer.price().getCurrency(),
         offer.price().getAmount(),
-        offer.description());
-    return offer;
+        offer.description(),
+        offer.quantity());
+    return new Offer(
+        offerId,
+        offer.name(),
+        offer.vendor(),
+        offer.price(),
+        offer.description(),
+        offer.quantity());
   }
 
   public long count() {
@@ -68,9 +78,11 @@ public class OfferRepository {
 
   private Offer mapOffer(ResultSet rs, int rowNum) throws SQLException {
     return new Offer(
+        rs.getString("id"),
         rs.getString("name"),
         new Vendor(rs.getString("vendor_name")),
-        new Money(rs.getString("currency"), rs.getDouble("amount")),
-        rs.getString("description"));
+        new Money(rs.getString("currency"), rs.getString("amount")),
+        rs.getString("description"),
+        rs.getInt("quantity"));
   }
 }

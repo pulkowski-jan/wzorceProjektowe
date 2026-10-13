@@ -1,31 +1,43 @@
 package pl.edu.uj.student.wzorceprojektowe.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Objects;
 
 public class Money {
     private final String currency;
     private final BigDecimal amount;
 
-    @JsonCreator
-    public Money(String currency, double amount) {
-        this.currency = currency;
-        this.amount = new BigDecimal(amount);
-    }
-
     private Money(String currency, BigDecimal amount) {
         this.amount = amount;
         this.currency = currency;
+    }
+
+    @JsonCreator
+    public Money(@JsonProperty("currency") String currency, @JsonProperty("amount") double amount) {
+        this(currency, new BigDecimal(amount));
+    }
+
+    public Money(String currency, String amount) {
+        this(currency, new BigDecimal(amount));
     }
 
     public String getCurrency() {
         return currency;
     }
 
+    @JsonIgnore
     public double getAmount() {
         return amount.doubleValue();
+    }
+
+    @JsonProperty("amount")
+    public String getAmountAsString() {
+        return amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
     public Money add(Money money) {

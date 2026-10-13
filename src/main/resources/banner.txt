@@ -1,0 +1,13 @@
+${AnsiColor.BRIGHT_MAGENTA}
+oooooo   oooooo     oooo                                                                          .oooooo..o                          .                                  oooooooooo.   o8o  oooo                .
+ `888.    `888.     .8'                                                                          d8P'    `Y8                        .o8                                  `888'   `Y8b  `"'  `888              .o8
+  `888.   .8888.   .8'     oooooooo  .ooooo.  oooo d8b  .ooooo.  oooo oooo    ooo oooo    ooo    Y88bo.      oooo    ooo  .oooo.o .o888oo  .ooooo.  ooo. .oo.  .oo.       888     888 oooo   888   .ooooo.  .o888oo  .ooooo.  oooo oooo    ooo oooo    ooo
+   `888  .8'`888. .8'     d'""7d8P  d88' `88b `888""8P d88' `88b  `88. `88.  .8'   `88.  .8'      `"Y8888o.   `88.  .8'  d88(  "8   888   d88' `88b `888P"Y88bP"Y88b      888oooo888' `888   888  d88' `88b   888   d88' `88b  `88. `88.  .8'   `88.  .8'
+    `888.8'  `888.8'        .d8P'   888   888  888     888   888   `88..]88..8'     `88..8'           `"Y88b   `88..8'   `"Y88b.    888   888ooo888  888   888   888      888    `88b  888   888  888ooo888   888   888   888   `88..]88..8'     `88..8'
+     `888'    `888'       .d8P'  .P 888   888  888     888   888    `888'`888'       `888'       oo     .d8P    `888'    o.  )88b   888 . 888    .o  888   888   888      888    .88P  888   888  888    .o   888 . 888   888    `888'`888'       `888'
+      `8'      `8'       d8888888P  `Y8bod8P' d888b    `Y8bod8P'     `8'  `8'         .8'        8""88888P'      .8'     8""888P'   "888" `Y8bod8P' o888o o888o o888o    o888bood8P'  o888o o888o `Y8bod8P'   "888" `Y8bod8P'     `8'  `8'         .8'
+                                                                                  .o..P'                     .o..P'                                                                                                                            .o..P'
+                                                                                  `Y8P'                      `Y8P'                                                                                                                             `Y8P'
+
+${AnsiColor.BRIGHT_GREEN}
+:: Spring Boot :: ${AnsiColor.DEFAULT} (${spring-boot.version})

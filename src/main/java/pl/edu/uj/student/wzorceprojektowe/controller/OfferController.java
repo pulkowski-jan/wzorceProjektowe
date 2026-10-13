@@ -1,5 +1,6 @@
 package pl.edu.uj.student.wzorceprojektowe.controller;
 
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.edu.uj.student.wzorceprojektowe.model.Offer;
@@ -31,20 +32,21 @@ public class OfferController {
     @GetMapping("/search")
     public ResponseEntity<List<Offer>> search(@RequestParam(required = false, defaultValue = "") String name,
                                               @RequestParam(required = false, defaultValue = "") String vendor) {
-        if (name.isBlank() && vendor.isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
         return ResponseEntity.ok(offerRepository.search(name, vendor));
     }
 
     @PostMapping
     public ResponseEntity<Offer> create(@RequestBody Offer offer) {
-        if (offer.vendor() == null || offer.vendor().name() == null || offer.vendor().name().isBlank()
-                || offer.name() == null || offer.name().isBlank() || offer.price() == null) {
+        if (isOfferInvalid(offer)) {
             return ResponseEntity.badRequest().build();
         }
         Vendor vendor = vendorRepository.findOrCreate(offer.vendor().name());
         return ResponseEntity.ok(offerRepository.insert(
-                new Offer(offer.name(), vendor, offer.price(), offer.description())));
+                new Offer("", offer.name(), vendor, offer.price(), offer.description(), offer.quantity())));
+    }
+
+    private static boolean isOfferInvalid(Offer offer) {
+        return offer.vendor() == null || Strings.isBlank(offer.vendor().name())
+                || Strings.isBlank(offer.name()) || offer.price() == null || offer.quantity() < 0;
     }
 }

@@ -1,6 +1,7 @@
 package pl.edu.uj.student.wzorceprojektowe.config;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import pl.edu.uj.student.wzorceprojektowe.offer.service.VendorService;
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Money;
@@ -9,6 +10,7 @@ import pl.edu.uj.student.wzorceprojektowe.offer.model.Vendor;
 import pl.edu.uj.student.wzorceprojektowe.offer.repository.OfferRepository;
 
 @Component
+@Profile("test")
 public class DataSeeder implements CommandLineRunner {
 
   private final OfferRepository offerRepository;

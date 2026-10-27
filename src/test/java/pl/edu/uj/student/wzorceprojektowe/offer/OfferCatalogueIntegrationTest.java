@@ -151,13 +151,13 @@ class OfferCatalogueIntegrationTest {
     }
 
     @Test
-    void unknownIdReturnsBadRequest() throws Exception {
-      assertThat(get("/offer/{id}", UUID.randomUUID()).status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+    void unknownIdReturnsNotFound() throws Exception {
+      assertThat(get("/offer/{id}", UUID.randomUUID()).status()).isEqualTo(HttpStatus.NOT_FOUND.value());
     }
 
     @Test
-    void malformedIdReturnsBadRequest() throws Exception {
-      assertThat(get("/offer/{id}", "not-a-uuid").status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+    void malformedIdReturnsNotFound() throws Exception {
+      assertThat(get("/offer/{id}", "not-a-uuid").status()).isEqualTo(HttpStatus.NOT_FOUND.value());
     }
   }
 
@@ -585,7 +585,7 @@ class OfferCatalogueIntegrationTest {
     }
 
     @Test
-    void unknownIdReturnsBadRequest() throws Exception {
+    void unknownIdReturnsNotFound() throws Exception {
       assertThat(
               post(
                   "/offer/update",
@@ -599,7 +599,7 @@ class OfferCatalogueIntegrationTest {
                       }
                       """.formatted(UUID.randomUUID()))
           .status())
-          .isEqualTo(HttpStatus.BAD_REQUEST.value());
+          .isEqualTo(HttpStatus.NOT_FOUND.value());
     }
   }
 
@@ -632,7 +632,7 @@ class OfferCatalogueIntegrationTest {
           "Do usuniecia",
           1);
 
-      assertThat(get("/offer/{id}", id).status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+      assertThat(get("/offer/{id}", id).status()).isEqualTo(HttpStatus.NOT_FOUND.value());
 
       HttpResponse afterDelete = getWithParams("/offer/search", "name", "Do Usuniecia");
       assertThat(readTree(afterDelete.body()).isArray()).isTrue();
@@ -640,8 +640,8 @@ class OfferCatalogueIntegrationTest {
     }
 
     @Test
-    void unknownIdReturnsBadRequest() throws Exception {
-      assertThat(delete("/offer/{id}", UUID.randomUUID()).status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+    void unknownIdReturnsNotFound() throws Exception {
+      assertThat(delete("/offer/{id}", UUID.randomUUID()).status()).isEqualTo(HttpStatus.NOT_FOUND.value());
     }
   }
 }

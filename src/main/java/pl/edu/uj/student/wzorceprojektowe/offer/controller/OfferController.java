@@ -56,10 +56,14 @@ public class OfferController {
 
   @ExceptionHandler(OfferNotFoundException.class)
   public ErrorResponse handleOfferNotFoundException(OfferNotFoundException e) {
-    return badRequest(e);
+    return notFound(e);
   }
 
   private static ErrorResponse badRequest(Exception e) {
     return ErrorResponse.create(e, HttpStatus.BAD_REQUEST, e.getMessage());
+  }
+
+  private static ErrorResponse notFound(Exception e) {
+    return ErrorResponse.create(e, HttpStatus.NOT_FOUND, e.getMessage());
   }
 }

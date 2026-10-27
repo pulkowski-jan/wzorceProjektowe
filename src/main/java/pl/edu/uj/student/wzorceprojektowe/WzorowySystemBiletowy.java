@@ -6,8 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class WzorowySystemBiletowy {
 
-	public static void main(String[] args) {
-		SpringApplication.run(WzorowySystemBiletowy.class, args);
-	}
-
+  public static void main(String[] args) {
+    SpringApplication.run(WzorowySystemBiletowy.class, args);
+  }
 }

@@ -1,15 +1,20 @@
 package pl.edu.uj.student.wzorceprojektowe;
 
 import org.junit.jupiter.api.Test;
-import pl.edu.uj.student.wzorceprojektowe.model.Money;
-import pl.edu.uj.student.wzorceprojektowe.model.Offer;
-import pl.edu.uj.student.wzorceprojektowe.model.Vendor;
+import pl.edu.uj.student.wzorceprojektowe.infrastructure.MoneyJacksonComponent;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Money;
+import pl.edu.uj.student.wzorceprojektowe.offer.model.Offer;
+import pl.edu.uj.student.wzorceprojektowe.offer.model.Vendor;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class OfferSerializationTests {
-    private final JsonMapper mapper = JsonMapper.builder().build();
+    private final SimpleModule moneyModule = new SimpleModule()
+            .addSerializer(Money.class, new MoneyJacksonComponent.MoneySerializer())
+            .addDeserializer(Money.class, new MoneyJacksonComponent.MoneyDeserializer());
+    private final JsonMapper mapper = JsonMapper.builder().addModule(moneyModule).build();
 
     @Test
     void priceAmountIsAStringAndPreservesDecimalScale() {

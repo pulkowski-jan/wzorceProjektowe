@@ -1,0 +1,215 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper, margin=2cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{lmodern}
+\usepackage[scale=0.85]{FiraMono}
+\usepackage[scaled=0.95]{helvet}
+
+\definecolor{docblue}{RGB}{0, 102, 204}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=docblue,
+    citecolor=docblue,
+    urlcolor=docblue
+}
+
+\title{\textbf{Dokumentacja Projektowa}\\Wzorowy System Biletowy}
+\author{Jan Pulkowski, Miłosz Zajdel}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Wprowadzenie}
+Wzorowy System Biletowy to aplikacja serwerowa realizująca proces rezerwacji i sprzedaży biletów.
+System został zaimplementowany w języku Java 21 z wykorzystaniem środowiska Spring Boot oraz bazy danych SQLite.
+
+\subsection{Quickstart}
+Wszystkie zadania budowania realizuje skrypt \texttt{gradlew} (lub w systemie Windows \texttt{gradlew.bat}).
+\begin{itemize}
+  \item Uruchomienie -- \texttt{./gradlew~run}
+  \item Kompilacja -- \texttt{./gradlew~build}
+  \item Kompilacja dokumentacji z tex do pdf -- \texttt{./gradlew~buildDocs}
+\end{itemize}
+
+\subsection{Architektura}
+Wzorowy system biletowy to monolityczny REST service.
+\begin{itemize}
+    \item \textbf{Baza Danych}: SQLite wykorzystywana w trybie wbudowanym, klucze eksponowane przez API, zatem w formacie UUID. W celach ułatwienia testów i pracy baza jest tworzona na nowo przy każdym uruchomieniu aplikacji.
+    Zachowanie to można zmienić w pliku konfiguracyjnym \texttt{resources/application.yaml} -- klucz \texttt{spring.sql.init.mode}.
+    \item \textbf{API}: Osobne endpointy dla każdego z modułów -- katalog ofert, procesor rezerwacji, procesor płatności. Implementacja według wzoru Kontroler-Usługa-Repozytorium.
+\end{itemize}
+
+\section{Katalog ofert}
+
+\subsection{Model Oferty}
+
+\input{schema/offer}
+
+\subsection{Reprezentacja w bazie danych}
+
+\begin{table}[ht]
+  \centering
+  \renewcommand{\arraystretch}{1.3} % Adds vertical padding to rows for readability
+  \begin{tabularx}{\textwidth}{|l|l|l|X|l|}
+    \hline
+    \textbf{Kolumna} & \textbf{Typ SQL} & \textbf{Ograniczenia} & \textbf{Opis} & \textbf{Odpowiednik API} \\
+    \hline
+    id & TEXT & PRIMARY KEY & UUID oferty & \texttt{id} \\
+    \hline
+    name & TEXT & NOT NULL & Nazwa oferty & \texttt{name} \\
+    \hline
+    vendor\_id & INTEGER & NOT NULL, FK & Klucz zewnętrzny do tabeli \texttt{vendor} & Niedostępne przez api \\
+    \hline
+    currency & TEXT & NOT NULL & Kod waluty & \texttt{price.currency} \\
+    \hline
+    amount & TEXT & NOT NULL & Cena oferty w formacie tekstowym & \texttt{price.amount} \\
+    \hline
+    description & TEXT & NOT NULL & Opis oferty & \texttt{description} \\
+    \hline
+    quantity & INTEGER & NOT NULL, $\ge 0$ & Dostępność oferty & \texttt{quantity} \\
+    \hline
+  \end{tabularx}
+  \caption{Struktura tabeli \texttt{offer}}
+  \label{tab:schema-offer}
+\end{table}
+
+\begin{table}[ht]
+  \centering
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\textwidth}{|l|l|l|X|l|}
+    \hline
+    \textbf{Kolumna} & \textbf{Typ SQL} & \textbf{Ograniczenia} & \textbf{Opis} & \textbf{Odpowiednik API} \\
+    \hline
+    id & INTEGER & PK, AUTOINCREMENT & Klucz pierwotny & Niedostępne przez api \\
+    \hline
+    name & TEXT & NOT NULL & Unikalna indeksowana nazwa sprzedawcy & \texttt{vendor.name} \\
+    \hline
+  \end{tabularx}
+  \caption{Struktura tabeli \texttt{vendor}}
+  \label{tab:schema-vendor}
+\end{table}
+
+\newpage
+
+\subsection{Endpointy API}
+
+Ścieżka bazowa API katalogu ofert to \texttt{/offer}. Jeżeli pole nie jest podane jako opcjonalne to jest obowiązkowe i musi zostać wypełnione. Wszystkie zapytania zwracają \hyperref[schema:offer]{obiekt Offer}, jeżeli zapytanie się powiodło, w przeciwnym wypadku kod błędu.
+
+
+\subsubsection{Endpoint \texttt{/\{id\}}}
+
+\begin{itemize}
+  \item Metoda: \texttt{GET}. Brak parametrów i ciała zapytania. Zwraca ofertę o UUID równym podanemu \texttt{id}.
+  \item Metoda: \texttt{DELETE}. Brak parametrów i ciała zapytania. Usuwa i zwraca ofertę o UUID równym podanemu \texttt{id}.
+\end{itemize}
+
+\subsubsection{Endpoint \texttt{/search}}
+
+Metoda: \texttt{GET}. Parametry: \texttt{vendor}, \texttt{name}. Brak ciała zapytania. Zwraca oferty pasujące nazwą i/lub nazwą sprzedawcy do parametrów zapytania. Obowiązkowe jest podanie co najmniej 1 parametru.
+
+\subsubsection{Endpoint \texttt{/create}}
+
+Metoda: \texttt{POST}. Brak parametrów. Ciało zapytania: \hyperref[schema:offer]{obiekt Offer}. Tworzy zadaną ofertę. Pole \texttt{id} jest nieobowiązkowe i ignorowane; pole \texttt{description} może być pustym stringiem. Zwraca utworzoną ofertę.
+
+\subsubsection{Endpoint \texttt{/update}}
+
+Metoda: \texttt{POST}. Brak parametrów. Ciało zapytania: \hyperref[schema:offer]{obiekt Offer}. Aktualizuje zadaną ofertę. Wszystkie pola poza \texttt{id} są nieobowiązkowe; pole \texttt{vendor} nie musi zostać wypełnione, jeżeli podano pole \texttt{vendor} to musi się ono zgadzać ze stanem dotychczasowym -- nie można go zmieniać. Oferta zostanie zaktualizowana o wszystkie pozostałe pola wypełnione w zapytaniu. Zwraca zaktualizowaną ofertę.
+
+\section{Procesor rezerwacji}
+
+\subsection{Model Rezerwacji}
+
+\input{schema/order}
+
+\subsection{Reprezentacja w bazie danych}
+\newpage
+\begin{table}[t]
+  \centering
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\textwidth}{|l|l|l|X|l|}
+    \hline
+    \textbf{Kolumna} & \textbf{Typ SQL} & \textbf{Ograniczenia} & \textbf{Opis} & \textbf{Odpowiednik API} \\
+    \hline
+    id & TEXT & PRIMARY KEY & UUID klienta & \texttt{id} \\
+    \hline
+    name & TEXT & NOT NULL & Imię i nazwisko lub nazwa firmy & \texttt{name} \\
+    \hline
+    email & TEXT & NOT NULL & Adres e-mail klienta & \texttt{email} \\
+    \hline
+  \end{tabularx}
+  \caption{Struktura tabeli \texttt{client}}
+  \label{tab:schema-client}
+\end{table}
+
+\begin{table}[ht]
+  \centering
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\textwidth}{|l|l|l|X|l|}
+    \hline
+    \textbf{Kolumna} & \textbf{Typ SQL} & \textbf{Ograniczenia} & \textbf{Opis} & \textbf{Odpowiednik API} \\
+    \hline
+    id & TEXT & PRIMARY KEY & UUID rezerwacji & \texttt{id} \\
+    \hline
+    version & INTEGER & NOT NULL & Licznik modyfikacji & Niedostępne przez api \\
+    \hline
+    client\_id & TEXT & NOT NULL, FK & Klucz zewnętrzny do tabeli \texttt{client} & Niedostępne przez api \\
+    \hline
+    offer\_items\_data & TEXT & NOT NULL & Zrzut JSON \hyperref[schema:order-item]{obiektów OrderItem} & \texttt{items} \\
+    \hline
+    create\_timestamp & INTEGER & NOT NULL & Znacznik czasu utworzenia & \texttt{createTimestamp} \\
+    \hline
+    last\_modified\_timestamp & INTEGER & NOT NULL & Znacznik ostatniej modyfikacji & \texttt{lastModifiedTimestamp} \\
+    \hline
+  \end{tabularx}
+  \caption{Struktura tabeli \texttt{reservation}}
+  \label{tab:schema-reservation}
+\end{table}
+
+\newpage
+
+
+\section{Procesor płatności}
+
+\subsection{Model płatności}
+
+\input{schema/payment}
+
+\subsection{Reprezentacja w bazie danych}
+
+\begin{table}[hbt]
+  \centering
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\textwidth}{|l|l|l|X|l|}
+    \hline
+    \textbf{Kolumna} & \textbf{Typ SQL} & \textbf{Ograniczenia} & \textbf{Opis} & \textbf{Odpowiednik API} \\
+    \hline
+    id & TEXT & PRIMARY KEY & UUID płatności & \texttt{id} \\
+    \hline
+    reservation\_id & TEXT & NOT NULL, FK & Klucz zewnętrzny do tabeli \texttt{reservation} & \texttt{reservationId} \\
+    \hline
+    amount & TEXT & NOT NULL & Kwota transakcji w formacie tekstowym & \texttt{amount} \\
+    \hline
+    currency & TEXT & NOT NULL & Trzyliterowy kod waluty & \texttt{currency} \\
+    \hline
+    payment\_timestamp & INTEGER & NOT NULL & Czas rejestracji wpłaty & \texttt{paymentTimestamp} \\
+    \hline
+  \end{tabularx}
+  \caption{Struktura tabeli \texttt{payment}}
+  \label{tab:schema-payment}
+\end{table}
+
+
+
+\end{document}

@@ -28,3 +28,26 @@ dependencies {
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
+tasks.register<Exec>("buildDocs") {
+	group = "documentation"
+	description = "Kompiluje dokumentację z plików LaTeX (.tex) do formatu PDF przy użyciu latexmk"
+
+	val outputDir = layout.buildDirectory.dir("docs").get().asFile
+
+	doFirst {
+		outputDir.mkdirs()
+	}
+
+	workingDir = file("docs")
+
+	commandLine(
+		"latexmk",
+		"-pdf",                                        // Generuj plik PDF
+		"-interaction=nonstopmode",                    // Nie zatrzymuj procesu w przypadku ostrzeżeń/drobnych błędów
+		"-output-directory=${outputDir.absolutePath}", // Zapisz wynik w build/docs/
+		"main.tex"                                     // Główny plik wejściowy
+	)
+
+
+}

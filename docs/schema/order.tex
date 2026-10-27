@@ -1,0 +1,41 @@
+\begin{figure*}[h]
+Jeżeli typ pola nie jest podany to jest to string.
+\begin{verbatim}
+{
+  "id": "UUID klienta",
+  "name": "Imię i nazwisko lub nazwa firmy",
+  "email": "Adres e-mail klienta"
+}
+\end{verbatim}
+\caption{Obiekt Client}
+\label{schema:client}
+\end{figure*}
+
+\begin{figure*}[h]
+Jeżeli typ pola nie jest podany to jest to string.
+\begin{verbatim}
+{
+  "id": "UUID rezerwacji",
+  "items": [
+    "Zrzut stanu i cen pozycji koszyka -- lista obiektów OrderItem"
+  ],
+  "createTimestamp": "Znacznik czasu utworzenia",
+  "lastModifiedTimestamp": "Znacznik ostatniej modyfikacji"
+}
+\end{verbatim}
+\caption{Obiekt Reservation}
+\label{schema:reservation}
+\end{figure*}
+
+\begin{figure*}[h]
+Jeżeli typ pola nie jest podany to jest to string.
+\begin{verbatim}
+{
+  "lineId": "UUID pozycji koszyka",
+  "offerSnapshot": "zrzut oferty w momencie rezerwacji -- obiekt Offer",
+  "quantity": "Liczba zarezerwowanych sztuk w danej pozycji -- liczba całkowita"
+}
+\end{verbatim}
+\caption{Obiekt OrderItem}
+\label{schema:order-item}
+\end{figure*}

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.edu.uj.student.wzorceprojektowe.offer.exception.OfferNotFoundException;
 import pl.edu.uj.student.wzorceprojektowe.offer.model.Offer;
+import pl.edu.uj.student.wzorceprojektowe.offer.model.UpdateOfferRequest;
 import pl.edu.uj.student.wzorceprojektowe.offer.repository.OfferRepository;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
 
@@ -15,17 +16,18 @@ import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationExce
 public class OfferChangeService {
   private final OfferRepository offerRepository;
 
-  public Offer updateOffer(Offer offer) {
+  public Offer updateOffer(UpdateOfferRequest request) {
     Offer existingOffer =
         offerRepository
-            .findById(offer.id())
+            .findById(request.id())
             .orElseThrow(
                 () ->
-                    new OfferNotFoundException("Offer with id %s not found".formatted(offer.id())));
-    if (offer.vendor() != null && !offer.vendor().equals(existingOffer.vendor())) {
+                    new OfferNotFoundException(
+                        "Offer with id %s not found".formatted(request.id())));
+    if (request.vendor() != null && !request.vendor().equals(existingOffer.vendor())) {
       throw new RequestValidationException("Order vendor cannot be changed");
     }
-    Offer newOffer = mergeOffers(existingOffer, offer);
+    Offer newOffer = mergeOffers(existingOffer, request);
     validateOffer(newOffer);
     return offerRepository.update(newOffer);
   }
@@ -37,13 +39,13 @@ public class OfferChangeService {
             () -> new OfferNotFoundException("Offer with id %s not found".formatted(offerId)));
   }
 
-  private Offer mergeOffers(Offer existingOffer, Offer newOffer) {
+  private Offer mergeOffers(Offer existingOffer, UpdateOfferRequest request) {
     return new Offer(
         existingOffer.id(),
-        Objects.requireNonNullElse(newOffer.name(), existingOffer.name()),
-        existingOffer.vendor(),
-        Objects.requireNonNullElse(newOffer.price(), existingOffer.price()),
-        Objects.requireNonNullElse(newOffer.description(), existingOffer.description()),
-        newOffer.quantity() < 0 ? existingOffer.quantity() : newOffer.quantity());
+        Objects.requireNonNullElse(request.name(), existingOffer.name()),
+        Objects.requireNonNullElse(request.vendor(), existingOffer.vendor()),
+        Objects.requireNonNullElse(request.price(), existingOffer.price()),
+        Objects.requireNonNullElse(request.description(), existingOffer.description()),
+        request.quantity() != null ? request.quantity() : existingOffer.quantity());
   }
 }

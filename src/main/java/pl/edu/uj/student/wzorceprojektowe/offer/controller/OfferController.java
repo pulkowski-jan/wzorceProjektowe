@@ -7,9 +7,10 @@ import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 import pl.edu.uj.student.wzorceprojektowe.offer.exception.OfferNotFoundException;
 import pl.edu.uj.student.wzorceprojektowe.offer.model.Offer;
+import pl.edu.uj.student.wzorceprojektowe.offer.model.UpdateOfferRequest;
+import pl.edu.uj.student.wzorceprojektowe.offer.service.OfferChangeService;
 import pl.edu.uj.student.wzorceprojektowe.offer.service.OfferCreateService;
 import pl.edu.uj.student.wzorceprojektowe.offer.service.OfferSearchService;
-import pl.edu.uj.student.wzorceprojektowe.offer.service.OfferChangeService;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
 
 @RestController
@@ -39,13 +40,13 @@ public class OfferController {
   }
 
   @PostMapping("/update")
-  public Offer update(@RequestBody Offer offer) {
-    return offerChangeService.updateOffer(offer);
+  public Offer update(@RequestBody UpdateOfferRequest request) {
+    return offerChangeService.updateOffer(request);
   }
 
   @DeleteMapping("/{id}")
-  public Offer delete(@PathVariable String offerId) {
-    return offerChangeService.deleteOffer(offerId);
+  public Offer delete(@PathVariable String id) {
+    return offerChangeService.deleteOffer(id);
   }
 
   @ExceptionHandler(RequestValidationException.class)

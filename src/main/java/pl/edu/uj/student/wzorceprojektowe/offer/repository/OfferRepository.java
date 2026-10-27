@@ -35,7 +35,13 @@ public class OfferRepository {
       "INSERT INTO offer(id, name, vendor_id, currency, amount, description, quantity) VALUES (?, ?, (SELECT id FROM vendor WHERE name = ?), ?, ?, ?, ?)";
   public static final String UPDATE_TEMPLATE =
       "UPDATE offer SET name = ?, description = ?, amount = ?, currency = ?, quantity = ? WHERE id = ?";
-  public static final String DELETE_TEMPLATE = "DELETE FROM offer WHERE id = ? RETURNING *";
+  public static final String DELETE_TEMPLATE =
+      """
+          DELETE FROM offer
+          WHERE id = ?
+          RETURNING id, name, currency, amount, description, quantity,
+                 (SELECT v.name FROM vendor v WHERE v.id = offer.vendor_id) AS vendor_name
+          """;
   public static final String COUNT_QUERY = "SELECT COUNT(*) FROM offer";
 
   private final JdbcTemplate jdbc;

@@ -21,15 +21,21 @@ public class OfferValidator {
           notNullPolicy(Offer::price, "Offer must have price"),
           notBlankPolicy(Offer::name, "Offer name cannot be empty"),
           notBlankPolicy(
-              offer -> offer.price().getCurrency(), "Offer price currency cannot be empty"),
+              offer -> offer.price() == null ? "" : offer.price().getCurrency(),
+              "Offer price currency cannot be empty"),
           policyOf(offer -> offer.quantity() >= 0, "Offer quantity cannot be negative"),
-          policyOf(offer -> offer.price().getAmount() >= 0, "Offer price cannot be negative"));
+          policyOf(
+              offer -> offer.price() == null || offer.price().getAmount() >= 0,
+              "Offer price cannot be negative"));
 
   public static void validateOffer(Offer offer) {
     validateOffer(offer, List.of());
   }
 
   public static void validateOffer(Offer offer, List<ValidationPolicy<Offer>> additionalPolicies) {
+    if (offer == null) {
+      throw new OfferValidationException("Offer must not be null");
+    }
     String failedPoliciesMessage =
         Stream.concat(additionalPolicies.stream(), OFFER_VALIDATION_POLICIES.stream())
             .filter(policy -> policy.isFailing(offer))

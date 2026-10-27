@@ -5,6 +5,7 @@ import static pl.edu.uj.student.wzorceprojektowe.shared.util.validator.Validatio
 import static pl.edu.uj.student.wzorceprojektowe.shared.util.validator.ValidationPolicy.notNullPolicy;
 
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.edu.uj.student.wzorceprojektowe.offer.model.Offer;
@@ -22,7 +23,9 @@ public class OfferCreateService {
         newOffer,
         List.of(
             notNullPolicy(Offer::vendor, "Offer must have vendor"),
-            notBlankPolicy(offer -> offer.vendor().name(), "Offer vendor name cannot be empty")));
+            notBlankPolicy(
+                offer -> offer.vendor() == null ? "" : offer.vendor().name(),
+                "Offer vendor name cannot be empty")));
     Vendor vendor = vendorService.findOrCreate(newOffer.vendor().name());
     return offerRepository.insert(
         new Offer(
@@ -30,7 +33,7 @@ public class OfferCreateService {
             newOffer.name(),
             vendor,
             newOffer.price(),
-            newOffer.description(),
+            Objects.requireNonNullElse(newOffer.description(), ""),
             newOffer.quantity()));
   }
 }

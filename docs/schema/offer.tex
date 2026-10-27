@@ -1,0 +1,20 @@
+\begin{figure*}[h]
+\label{schema:offer}
+Jeżeli typ pola nie jest podany to jest to string.
+\begin{verbatim}
+{
+  "id": "UUID oferty",
+  "name": "Nazwa oferty",
+  "vendor": {
+    "name": "Nazwa sprzedawcy"
+  },
+  "price": {
+    "amount": "Cena oferty w formacie tekstowym",
+    "currency": "Kod waluty"
+  },
+  "description": "Opis oferty",
+  "quantity": "Liczba możliwych sprzedaży oferty -- liczba całkowita"
+}
+\end{verbatim}
+\caption{Obiekt Offer}
+\end{figure*}

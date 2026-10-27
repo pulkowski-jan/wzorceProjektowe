@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:sqlite:build/offers-integration-test-${random.uuid}.db
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+  profiles:
+    active: test

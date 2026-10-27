@@ -19,7 +19,7 @@ CREATE TABLE offer
     vendor_id   INTEGER NOT NULL REFERENCES vendor (id),
     currency    TEXT    NOT NULL,
     amount      TEXT    NOT NULL,
-    description TEXT,
+    description TEXT    NOT NULL,
     quantity INTEGER NOT NULL CHECK (quantity >= 0)
 );
 

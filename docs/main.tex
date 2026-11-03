@@ -81,6 +81,8 @@ Wzorowy system biletowy to monolityczny REST service.
     \hline
     quantity & INTEGER & NOT NULL, $\ge 0$ & Dostępność oferty & \texttt{quantity} \\
     \hline
+    version & INTEGER & NOT NULL, $\ge 0$ & Wersja oferty & \texttt{version} \\
+    \hline
   \end{tabularx}
   \caption{Struktura tabeli \texttt{offer}}
   \label{tab:schema-offer}
@@ -104,7 +106,7 @@ Wzorowy system biletowy to monolityczny REST service.
 
 \subsection{Endpointy API}
 
-Ścieżka bazowa API katalogu ofert to \texttt{/offer}. Jeżeli pole nie jest podane jako opcjonalne to jest obowiązkowe i musi zostać wypełnione. Wszystkie zapytania zwracają \hyperref[schema:offer]{obiekt Offer}, jeżeli zapytanie się powiodło, w przeciwnym wypadku kod błędu.
+Ścieżka bazowa API katalogu ofert to \texttt{/offer}. Jeżeli pole nie jest podane jako opcjonalne to jest obowiązkowe i musi zostać wypełnione, wyjątkiem jest pole version które w zapytaniu zawsze jest opcjonalne i ignorowane. Wszystkie zapytania zwracają \hyperref[schema:offer]{obiekt Offer}, jeżeli zapytanie się powiodło, w przeciwnym wypadku kod błędu.
 
 
 \subsubsection{Endpoint \texttt{/\{id\}}}

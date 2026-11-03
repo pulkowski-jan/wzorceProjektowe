@@ -252,6 +252,7 @@ class OfferCatalogueIntegrationTest {
       assertSuccess(response);
       JsonNode offer = readTree(response.body());
       String generatedId = offer.get("id").asString();
+      createdIds.add(generatedId);
       assertThat(generatedId).isNotEqualTo("00000000-0000-0000-0000-000000000000");
     }
 

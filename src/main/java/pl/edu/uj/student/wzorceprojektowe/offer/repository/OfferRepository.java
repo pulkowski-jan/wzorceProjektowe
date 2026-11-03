@@ -80,7 +80,7 @@ public class OfferRepository {
   }
 
   public Offer update(Offer offer) {
-    int affectedColumns = jdbc.update(
+    int affectedRows = jdbc.update(
         UPDATE_TEMPLATE,
         offer.name(),
         offer.description(),
@@ -90,7 +90,7 @@ public class OfferRepository {
         offer.version() + 1,
         offer.id(),
         offer.version());
-    if (affectedColumns != 1) {
+    if (affectedRows != 1) {
       throw new OptimisticLockingFailureException(
               "Concurrent offer change or was deletion detected for offer: " + offer.id());
     }

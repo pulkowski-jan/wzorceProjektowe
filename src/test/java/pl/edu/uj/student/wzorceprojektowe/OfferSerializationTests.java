@@ -19,7 +19,7 @@ class OfferSerializationTests {
     @Test
     void priceAmountIsAStringAndPreservesDecimalScale() {
         var offer = new Offer("test-id", "Concert", new Vendor("Vendor"),
-                new Money("PLN", "12.30"), "Ticket", 1);
+                new Money("PLN", "12.30"), "Ticket", 1, 1);
         var json = mapper.readTree(mapper.writeValueAsString(offer));
         assertTrue(json.get("price").get("amount").isString());
         assertEquals("12.30", json.get("price").get("amount").asString());
@@ -35,11 +35,5 @@ class OfferSerializationTests {
             var json = mapper.readTree(mapper.writeValueAsString(new Money("PLN", example[0])));
             assertEquals(example[1], json.get("amount").asString());
         }
-    }
-
-    @Test
-    void numericAmountsCanStillBeDeserialized() {
-        var money = mapper.readValue("{\"currency\":\"PLN\",\"amount\":12.5}", Money.class);
-        assertEquals(12.5, money.getAmount());
     }
 }

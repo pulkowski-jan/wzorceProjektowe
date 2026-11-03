@@ -7,7 +7,7 @@ import lombok.Getter;
 
 public class Money {
   @Getter private final String currency;
-  private final BigDecimal amount;
+  @Getter private final BigDecimal amount;
 
   private Money(String currency, BigDecimal amount) {
     this.amount = amount;
@@ -20,10 +20,6 @@ public class Money {
 
   public Money(String currency, String amount) {
     this(currency, new BigDecimal(amount));
-  }
-
-  public double getAmount() {
-    return amount.doubleValue();
   }
 
   public String getAmountAsString() {
@@ -43,8 +39,8 @@ public class Money {
     return add(money.negate());
   }
 
-  public Money multiply(double times) {
-    return new Money(currency, amount.multiply(new BigDecimal(times)));
+  public Money multiply(BigDecimal times) {
+    return new Money(currency, amount.multiply(times));
   }
 
   private void validateForArithmetics(Money money) {

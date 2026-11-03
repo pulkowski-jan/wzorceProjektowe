@@ -20,7 +20,7 @@ public class MoneyJacksonComponent {
     public void serialize(Money value, JsonGenerator gen, SerializationContext ctxt) {
       gen.writeStartObject();
       gen.writeStringProperty("amount", value.getAmountAsString());
-      gen.writeStringProperty("currency", value.getCurrency());
+      gen.writeStringProperty("currency", value.currency());
       gen.writeEndObject();
     }
   }

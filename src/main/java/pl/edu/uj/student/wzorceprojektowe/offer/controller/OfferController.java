@@ -55,6 +55,11 @@ public class OfferController {
     return badRequest(e);
   }
 
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ErrorResponse handleRequestValidationException(IllegalArgumentException e) {
+    return badRequest(e);
+  }
+
   @ExceptionHandler(OfferNotFoundException.class)
   public ErrorResponse handleOfferNotFoundException(OfferNotFoundException e) {
     return notFound(e);

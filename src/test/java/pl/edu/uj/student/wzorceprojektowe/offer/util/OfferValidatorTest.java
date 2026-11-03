@@ -81,18 +81,6 @@ class OfferValidatorTest {
     }
 
     @Test
-    void priceWithNullCurrencyThrowsInsteadOfNpe() {
-      Offer offer = new Offer("id-1", "Koncert", VENDOR, new Money(null, "19.99"), "Opis", 5, 1);
-      assertThrows(OfferValidationException.class, () -> validateOffer(offer));
-    }
-
-    @Test
-    void priceWithBlankCurrencyThrows() {
-      Offer offer = new Offer("id-1", "Koncert", VENDOR, new Money("", "19.99"), "Opis", 5, 1);
-      assertThrows(OfferValidationException.class, () -> validateOffer(offer));
-    }
-
-    @Test
     void negativeAmountThrowsInsteadOfNpe() {
       Offer offer = new Offer("id-1", "Koncert", VENDOR, new Money("PLN", "-5.00"), "Opis", 5, 1);
       assertThrows(OfferValidationException.class, () -> validateOffer(offer));

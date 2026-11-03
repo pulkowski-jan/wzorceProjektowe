@@ -2,6 +2,7 @@ package pl.edu.uj.student.wzorceprojektowe.offer.controller;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
@@ -54,9 +55,20 @@ public class OfferController {
     return badRequest(e);
   }
 
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ErrorResponse handleRequestValidationException(IllegalArgumentException e) {
+    return badRequest(e);
+  }
+
   @ExceptionHandler(OfferNotFoundException.class)
   public ErrorResponse handleOfferNotFoundException(OfferNotFoundException e) {
     return notFound(e);
+  }
+
+  @ExceptionHandler(OptimisticLockingFailureException.class)
+  public ErrorResponse handleOptimisticLockingFailureException(
+      OptimisticLockingFailureException e) {
+    return conflict(e);
   }
 
   private static ErrorResponse badRequest(Exception e) {
@@ -65,5 +77,9 @@ public class OfferController {
 
   private static ErrorResponse notFound(Exception e) {
     return ErrorResponse.create(e, HttpStatus.NOT_FOUND, e.getMessage());
+  }
+
+  private static ErrorResponse conflict(Exception e) {
+    return ErrorResponse.create(e, HttpStatus.CONFLICT, e.getMessage());
   }
 }

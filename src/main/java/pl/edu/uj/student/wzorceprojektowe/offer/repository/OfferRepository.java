@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import pl.edu.uj.student.wzorceprojektowe.offer.model.Offer;
@@ -42,7 +43,6 @@ public class OfferRepository {
       RETURNING id, name, currency, amount, description, quantity, version,
              (SELECT v.name FROM vendor v WHERE v.id = offer.vendor_id) AS vendor_name
       """;
-  public static final String COUNT_QUERY = "SELECT COUNT(*) FROM offer";
 
   private final JdbcTemplate jdbc;
 
@@ -65,7 +65,7 @@ public class OfferRepository {
         offerId,
         offer.name(),
         offer.vendor().name(),
-        offer.price().getCurrency(),
+        offer.price().currency(),
         offer.price().getAmountAsString(),
         offer.description(),
         offer.quantity());
@@ -80,16 +80,20 @@ public class OfferRepository {
   }
 
   public Offer update(Offer offer) {
-    jdbc.update(
+    int affectedRows = jdbc.update(
         UPDATE_TEMPLATE,
         offer.name(),
         offer.description(),
         offer.price().getAmountAsString(),
-        offer.price().getCurrency(),
+        offer.price().currency(),
         offer.quantity(),
         offer.version() + 1,
         offer.id(),
         offer.version());
+    if (affectedRows != 1) {
+      throw new OptimisticLockingFailureException(
+              "Concurrent offer change or was deletion detected for offer: " + offer.id());
+    }
     return new Offer(
         offer.id(),
         offer.name(),
@@ -106,11 +110,6 @@ public class OfferRepository {
     } catch (EmptyResultDataAccessException e) {
       return Optional.empty();
     }
-  }
-
-  public long count() {
-    Long count = jdbc.queryForObject(COUNT_QUERY, Long.class);
-    return count == null ? 0 : count;
   }
 
   private Offer mapOffer(ResultSet rs, int rowNum) throws SQLException {

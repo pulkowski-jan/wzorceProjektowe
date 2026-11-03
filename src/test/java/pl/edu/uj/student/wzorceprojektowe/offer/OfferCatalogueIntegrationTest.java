@@ -83,7 +83,6 @@ class OfferCatalogueIntegrationTest {
           "PLN",
           "Bilet na koncert",
           1);
-      createdIds.add(id);
     }
 
     @Test
@@ -105,11 +104,9 @@ class OfferCatalogueIntegrationTest {
     @ParameterizedTest(name = "[{index}] {0}")
     @MethodSource("searchCases")
     void searchReturnsExactlyTheExpectedOffers(SearchCase testCase) {
-
       for (String payload : testCase.payloads()) {
-        createdIds.add(createOffer(payload));
+        createOffer(payload);
       }
-
       HttpResponse response =
           getWithParams("/offer/search", testCase.queryParams().toArray(String[]::new));
       assertSuccess(response);
@@ -236,7 +233,6 @@ class OfferCatalogueIntegrationTest {
           "EUR",
           "Bilet VIP",
           3);
-      createdIds.add(id);
     }
 
     @Test
@@ -256,8 +252,8 @@ class OfferCatalogueIntegrationTest {
       assertSuccess(response);
       JsonNode offer = readTree(response.body());
       String generatedId = offer.get("id").asString();
-      assertThat(generatedId).isNotEqualTo("00000000-0000-0000-0000-000000000000");
       createdIds.add(generatedId);
+      assertThat(generatedId).isNotEqualTo("00000000-0000-0000-0000-000000000000");
     }
 
     @Test
@@ -273,7 +269,6 @@ class OfferCatalogueIntegrationTest {
               }
               """);
       assertThat(id).isNotBlank();
-      createdIds.add(id);
     }
 
     @Test
@@ -292,7 +287,6 @@ class OfferCatalogueIntegrationTest {
       HttpResponse response = get("/offer/{id}", id);
       assertSuccess(response);
       assertThat(readTree(response.body()).get("description").asString()).isEqualTo("");
-      createdIds.add(id);
     }
 
     @Test
@@ -473,7 +467,6 @@ class OfferCatalogueIntegrationTest {
           2);
       HttpResponse getResponse = get("/offer/{id}", id);
       assertThat(getResponse.body()).isEqualTo(updateResponse.body());
-      createdIds.add(id);
     }
 
     @Test
@@ -500,7 +493,6 @@ class OfferCatalogueIntegrationTest {
           """
               .formatted(id);
       assertThat(post("/offer/update", update).status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
-      createdIds.add(id);
     }
 
     @Test
@@ -535,7 +527,6 @@ class OfferCatalogueIntegrationTest {
       assertThat(offer.get("price").get("currency").asString()).isEqualTo("PLN");
       assertThat(offer.get("description").asString()).isEqualTo("Opis");
       assertThat(offer.get("quantity").asInt()).isEqualTo(5);
-      createdIds.add(id);
     }
 
     @Test
@@ -602,7 +593,6 @@ class OfferCatalogueIntegrationTest {
     }
   }
 
-
   @Nested
   class MoneyDeserialization {
 
@@ -610,16 +600,16 @@ class OfferCatalogueIntegrationTest {
     @MethodSource("invalidPricePayloads")
     void rejectsInvalidPrice(String description, String priceJson) {
       String payload =
-              """
-              {
-                "name": "Test",
-                "vendor": {"name": "Teatr"},
-                "price": %s,
-                "description": "Opis",
-                "quantity": 1
-              }
-              """
-                      .formatted(priceJson);
+          """
+          {
+            "name": "Test",
+            "vendor": {"name": "Teatr"},
+            "price": %s,
+            "description": "Opis",
+            "quantity": 1
+          }
+          """
+              .formatted(priceJson);
 
       HttpResponse response = post("/offer/create", payload);
       assertThat(response.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
@@ -628,19 +618,19 @@ class OfferCatalogueIntegrationTest {
 
     static Stream<Arguments> invalidPricePayloads() {
       return Stream.of(
-              Arguments.of("price is null", "null"),
-              Arguments.of("price is a string", "\"120.00\""),
-              Arguments.of("price is a number", "123.00"),
-              Arguments.of("price is an array", "[]"),
-              Arguments.of("price is an empty object", "{}"),
-              Arguments.of("missing amount", "{\"currency\": \"PLN\"}"),
-              Arguments.of("missing currency", "{\"amount\": \"120.00\"}"),
-              Arguments.of("null amount", "{\"amount\": null, \"currency\": \"PLN\"}"),
-              Arguments.of("numeric amount", "{\"amount\": 120, \"currency\": \"PLN\"}"),
-              Arguments.of("non-numeric amount", "{\"amount\": \"abc\", \"currency\": \"PLN\"}"),
-              Arguments.of("empty amount", "{\"amount\": \"\", \"currency\": \"PLN\"}"),
-              Arguments.of("blank currency", "{\"amount\": \"120.00\", \"currency\": \"\"}"),
-              Arguments.of("numeric currency", "{\"amount\": \"120.00\", \"currency\": 5}"));
+          Arguments.of("price is null", "null"),
+          Arguments.of("price is a string", "\"120.00\""),
+          Arguments.of("price is a number", "123.00"),
+          Arguments.of("price is an array", "[]"),
+          Arguments.of("price is an empty object", "{}"),
+          Arguments.of("missing amount", "{\"currency\": \"PLN\"}"),
+          Arguments.of("missing currency", "{\"amount\": \"120.00\"}"),
+          Arguments.of("null amount", "{\"amount\": null, \"currency\": \"PLN\"}"),
+          Arguments.of("numeric amount", "{\"amount\": 120, \"currency\": \"PLN\"}"),
+          Arguments.of("non-numeric amount", "{\"amount\": \"abc\", \"currency\": \"PLN\"}"),
+          Arguments.of("empty amount", "{\"amount\": \"\", \"currency\": \"PLN\"}"),
+          Arguments.of("blank currency", "{\"amount\": \"120.00\", \"currency\": \"\"}"),
+          Arguments.of("numeric currency", "{\"amount\": \"120.00\", \"currency\": 5}"));
     }
   }
 
@@ -691,7 +681,9 @@ class OfferCatalogueIntegrationTest {
     HttpResponse response = post("/offer/create", body);
     assertSuccess(response);
     JsonNode offer = readTree(response.body());
-    return offer.get("id").asString();
+    String id = offer.get("id").asString();
+    createdIds.add(id);
+    return id;
   }
 
   private void assertOffer(

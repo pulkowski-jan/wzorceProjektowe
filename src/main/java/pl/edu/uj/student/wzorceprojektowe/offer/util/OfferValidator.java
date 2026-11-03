@@ -22,11 +22,11 @@ public class OfferValidator {
           notNullPolicy(Offer::price, "Offer must have price"),
           notBlankPolicy(Offer::name, "Offer name cannot be empty"),
           notBlankPolicy(
-              offer -> offer.price() == null ? "" : offer.price().getCurrency(),
+              offer -> offer.price() == null ? "" : offer.price().currency(),
               "Offer price currency cannot be empty"),
           policyOf(offer -> offer.quantity() >= 0, "Offer quantity cannot be negative"),
           policyOf(
-              offer -> offer.price() == null || offer.price().getAmount().compareTo(BigDecimal.ZERO) >= 0,
+              offer -> offer.price() == null || offer.price().amount().compareTo(BigDecimal.ZERO) >= 0,
               "Offer price cannot be negative"));
 
   public static void validateOffer(Offer offer) {

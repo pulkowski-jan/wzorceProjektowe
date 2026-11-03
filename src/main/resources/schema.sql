@@ -20,7 +20,8 @@ CREATE TABLE offer
     currency    TEXT    NOT NULL,
     amount      TEXT    NOT NULL,
     description TEXT    NOT NULL,
-    quantity INTEGER NOT NULL CHECK (quantity >= 0)
+    quantity    INTEGER NOT NULL CHECK (quantity >= 0),
+    version     INTEGER NOT NULL CHECK (version >= 0 )
 );
 
 CREATE TABLE client
@@ -33,7 +34,7 @@ CREATE TABLE client
 CREATE TABLE reservation
 (
     id                      TEXT PRIMARY KEY,
-    version                 INTEGER NOT NULL,
+    version                 INTEGER NOT NULL CHECK (version >= 0 ),
     client_id               TEXT    NOT NULL REFERENCES client (id),
     offer_items_data        TEXT    NOT NULL, -- JSON dump
     create_timestamp        INTEGER NOT NULL,

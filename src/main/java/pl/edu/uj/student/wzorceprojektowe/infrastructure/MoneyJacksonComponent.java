@@ -1,8 +1,9 @@
 package pl.edu.uj.student.wzorceprojektowe.infrastructure;
 
+import java.math.BigDecimal;
 import org.springframework.boot.jackson.JacksonComponent;
+import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Money;
-import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.DeserializationContext;
@@ -26,11 +27,30 @@ public class MoneyJacksonComponent {
 
   public static class MoneyDeserializer extends ValueDeserializer<Money> {
     @Override
-    public Money deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
+    public Money deserialize(JsonParser p, DeserializationContext ctxt) {
       JsonNode node = p.readValueAsTree();
-      String currency = node.get("currency").asString();
-      String amount = node.get("amount").asString();
+      if (!node.isObject()) {
+        throw new RequestValidationException(
+            "price must be an object with 'amount' and 'currency' fields");
+      }
+      String amount = requiredString(node, "amount");
+      String currency = requiredString(node, "currency");
+      try {
+        new BigDecimal(amount);
+      } catch (NumberFormatException e) {
+        throw new RequestValidationException(
+            "price.amount must be a valid decimal number, got: \"" + amount + "\"");
+      }
       return new Money(currency, amount);
+    }
+
+    private static String requiredString(JsonNode node, String field) {
+      JsonNode value = node.get(field);
+      if (value == null || !value.isString() || value.asString().isBlank()) {
+        throw new RequestValidationException(
+            "price." + field + " is required and must be a non-blank JSON string");
+      }
+      return value.asString();
     }
   }
 }

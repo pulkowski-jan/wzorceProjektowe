@@ -20,10 +20,8 @@ public class OfferChangeService {
     Offer existingOffer =
         offerRepository
             .findById(request.id())
-            .orElseThrow(
-                () ->
-                    new OfferNotFoundException(
-                        "Offer with id %s not found".formatted(request.id())));
+            .orElseThrow(() ->
+                new OfferNotFoundException("Offer with id %s not found".formatted(request.id())));
     if (request.vendor() != null && !request.vendor().equals(existingOffer.vendor())) {
       throw new RequestValidationException("Order vendor cannot be changed");
     }
@@ -46,6 +44,7 @@ public class OfferChangeService {
         Objects.requireNonNullElse(request.vendor(), existingOffer.vendor()),
         Objects.requireNonNullElse(request.price(), existingOffer.price()),
         Objects.requireNonNullElse(request.description(), existingOffer.description()),
-        request.quantity() != null ? request.quantity() : existingOffer.quantity());
+        request.quantity() != null ? request.quantity() : existingOffer.quantity(),
+        existingOffer.version());
   }
 }

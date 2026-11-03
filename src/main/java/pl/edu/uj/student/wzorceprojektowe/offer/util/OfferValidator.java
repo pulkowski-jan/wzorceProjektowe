@@ -2,6 +2,7 @@ package pl.edu.uj.student.wzorceprojektowe.offer.util;
 
 import static pl.edu.uj.student.wzorceprojektowe.shared.util.validator.ValidationPolicy.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -25,7 +26,7 @@ public class OfferValidator {
               "Offer price currency cannot be empty"),
           policyOf(offer -> offer.quantity() >= 0, "Offer quantity cannot be negative"),
           policyOf(
-              offer -> offer.price() == null || offer.price().getAmount() >= 0,
+              offer -> offer.price() == null || offer.price().getAmount().compareTo(BigDecimal.ZERO) >= 0,
               "Offer price cannot be negative"));
 
   public static void validateOffer(Offer offer) {

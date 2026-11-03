@@ -34,6 +34,7 @@ public class OfferCreateService {
             vendor,
             newOffer.price(),
             Objects.requireNonNullElse(newOffer.description(), ""),
-            newOffer.quantity()));
+            newOffer.quantity(),
+            null));
   }
 }

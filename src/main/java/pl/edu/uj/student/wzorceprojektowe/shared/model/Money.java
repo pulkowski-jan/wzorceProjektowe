@@ -3,52 +3,54 @@ package pl.edu.uj.student.wzorceprojektowe.shared.model;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
-import lombok.Getter;
 
-public class Money {
-  @Getter private final String currency;
-  @Getter private final BigDecimal amount;
+public record Money(String currency, BigDecimal amount) {
+  private static final int SCALE = 2;
+  private static final RoundingMode ROUNDING = RoundingMode.HALF_UP;
 
-  private Money(String currency, BigDecimal amount) {
-    this.amount = amount;
+  public Money(String currency, BigDecimal amount) {
+    if (currency == null || currency.isBlank()) {
+      throw new IllegalArgumentException("Currency must not be blank");
+    }
+
     this.currency = currency;
-  }
-
-  public Money(String currency, double amount) {
-    this(currency, new BigDecimal(amount));
+    this.amount =
+        Objects.requireNonNull(amount, "Amount must not be null").setScale(SCALE, ROUNDING);
   }
 
   public Money(String currency, String amount) {
-    this(currency, new BigDecimal(amount));
+    this(currency, new BigDecimal(Objects.requireNonNull(amount, "Amount must not be null")));
   }
 
   public String getAmountAsString() {
-    return amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
+    return amount.toPlainString();
   }
 
-  public Money add(Money money) {
-    validateForArithmetics(money);
-    return new Money(currency, amount.add(money.amount));
+  public Money add(Money other) {
+    requireSameCurrency(other);
+    return new Money(currency, amount.add(other.amount));
+  }
+
+  public Money subtract(Money other) {
+    requireSameCurrency(other);
+    return new Money(currency, amount.subtract(other.amount));
   }
 
   public Money negate() {
     return new Money(currency, amount.negate());
   }
 
-  public Money subtract(Money money) {
-    return add(money.negate());
+  public Money multiply(BigDecimal factor) {
+    Objects.requireNonNull(factor, "Factor must not be null");
+    return new Money(currency, amount.multiply(factor));
   }
 
-  public Money multiply(BigDecimal times) {
-    return new Money(currency, amount.multiply(times));
-  }
+  private void requireSameCurrency(Money other) {
+    Objects.requireNonNull(other, "Money must not be null");
 
-  private void validateForArithmetics(Money money) {
-    Objects.requireNonNull(money, "Money must not be null");
-    if (!this.currency.equals(money.getCurrency())) {
+    if (!currency.equals(other.currency)) {
       throw new IllegalArgumentException(
-          "Cannot add money of different currencies: %s != %s"
-              .formatted(this.currency, money.getCurrency()));
+          "Currency mismatch: %s != %s".formatted(currency, other.currency));
     }
   }
 }

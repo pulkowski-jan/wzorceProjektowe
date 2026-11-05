@@ -28,7 +28,7 @@ REST API do rezerwowania biletów na wydarzenia (koncerty spektakle itp.)
 
 - [ ] Weryfikacja reguł uczestników
 
-      Umożliwić zapis statusu rezerwacji i danych uczestników 
+      Umożliwić zapis statusu rezerwacji     (zarezerwowane/opłacone/anulowane) i danych uczestników 
       Stworzyć mechanizm sprawdzający poprawność danych uczestników w zależności od typu oferty 
       (dla grupy (wtedy wystarczą dane klienta), imienne (dane osoby per item), nieimienny (dane niewymagane))
 

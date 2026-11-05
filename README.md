@@ -24,11 +24,12 @@ REST API do rezerwowania biletów na wydarzenia (koncerty spektakle itp.)
       Zaimplementować tworzenie rezerwacji zawierającej oferty w momencie zakupu
       (ofertę zapakować we wrapper z timestampem i ilością sztuk
       i dump listy tych itemów do bazy).
-      Statusy i dane uczestników pozostają poza zakresem bieżącej implementacji.
+      
 
 - [ ] Weryfikacja reguł uczestników
 
-      Stworzyć mechanizm sprawdzający poprawność danych uczestnikóœ w zależności od typu oferty 
+      Umożliwić zapis statusu rezerwacji i danych uczestników 
+      Stworzyć mechanizm sprawdzający poprawność danych uczestników w zależności od typu oferty 
       (dla grupy (wtedy wystarczą dane klienta), imienne (dane osoby per item), nieimienny (dane niewymagane))
 
 - [ ] Obsługa współbieżności i inventory

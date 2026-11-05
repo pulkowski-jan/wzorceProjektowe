@@ -112,6 +112,17 @@ public class OfferRepository {
     }
   }
 
+  /** Conditional stock deduction; the caller must include it in the reservation transaction. */
+  public boolean reserveQuantity(String id, int quantity, int version) {
+    if (quantity <= 0) {
+      throw new IllegalArgumentException("Reserved quantity must be positive");
+    }
+    return jdbc.update("""
+        UPDATE offer SET quantity = quantity - ?, version = version + 1
+        WHERE id = ? AND quantity >= ? AND version = ?
+        """, quantity, id, quantity, version) == 1;
+  }
+
   private Offer mapOffer(ResultSet rs, int rowNum) throws SQLException {
     return new Offer(
         rs.getString("id"),

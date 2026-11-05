@@ -16,6 +16,7 @@ Jeżeli typ pola nie jest podany to jest to string.
 \begin{verbatim}
 {
   "id": "UUID rezerwacji",
+  "clientId": "UUID klienta",
   "items": [
     "Zrzut stanu i cen pozycji koszyka -- lista obiektów OrderItem"
   ],
@@ -33,9 +34,21 @@ Jeżeli typ pola nie jest podany to jest to string.
 {
   "lineId": "UUID pozycji koszyka",
   "offerSnapshot": "zrzut oferty w momencie rezerwacji -- obiekt Offer",
-  "quantity": "Liczba zarezerwowanych sztuk w danej pozycji -- liczba całkowita"
+  "quantity": "Liczba zarezerwowanych sztuk -- liczba całkowita",
+  "timestamp": "Czas utworzenia pozycji (UTC, ISO-8601)",
+  "status": "RESERVED / PAID / CANCELLED",
+  "participant": {
+    "name": "Imię i nazwisko uczestnika",
+    "email": "Opcjonalny adres e-mail"
+  }
 }
 \end{verbatim}
 \caption{Obiekt OrderItem}
 \label{schema:order-item}
 \end{figure}
+
+Pole \texttt{participant} jest opcjonalne i może mieć wartość \texttt{null}.
+Nowa pozycja ma status \texttt{RESERVED}. Statusy \texttt{PAID} i \texttt{CANCELLED}
+są przewidziane dla przyszłych modułów płatności i anulowania; obecne API nie
+pozwala ich ustawiać. Oferta w \texttt{offerSnapshot} jest niezmiennym zrzutem
+z chwili rezerwacji, przed odjęciem zapasu.

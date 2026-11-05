@@ -13,26 +13,30 @@ REST API do rezerwowania biletów na wydarzenia (koncerty spektakle itp.)
 
       read/write dostęp do listy ofert.
 
-- [ ] Zarządzanie rejestrem klientów
+- [x] Zarządzanie rejestrem klientów
 
       moduł do obsługi danych kupujących
 
 ## Rezerwacje i Reguły Biznesowe
 
-- [ ] Zapis i odczyt koszyka rezerwacji
+- [x] Zapis i odczyt koszyka rezerwacji
       
       Zaimplementować tworzenie rezerwacji zawierającej oferty w momencie zakupu
-      (ofertę zapakować we wrapper z timestampem i statusem (zaklepane/opłacone/anulowane) ilością sztuk, oraz opcjonalnymi danymi uczestnika 
+      (ofertę zapakować we wrapper z timestampem i ilością sztuk
       i dump listy tych itemów do bazy).
+      
 
 - [ ] Weryfikacja reguł uczestników
 
-      Stworzyć mechanizm sprawdzający poprawność danych uczestnikóœ w zależności od typu oferty 
+      Umożliwić zapis statusu rezerwacji     (zarezerwowane/opłacone/anulowane) i danych uczestników 
+      Stworzyć mechanizm sprawdzający poprawność danych uczestników w zależności od typu oferty 
       (dla grupy (wtedy wystarczą dane klienta), imienne (dane osoby per item), nieimienny (dane niewymagane))
 
 - [ ] Obsługa współbieżności i inventory
 
       Zabezpieczyć proces rezerwacji przed jednoczesnym zakupem tego samego miejsca przez wielu użytkowników i ponad inventory.
+      Rezerwacja już atomowo odejmuje dostępną ilość i chroni przed przekroczeniem inventory.
+      Model konkretnych miejsc i ich zależności pozostaje do implementacji.
 
 ## Stany i Płatności
 
@@ -61,3 +65,8 @@ REST API do rezerwowania biletów na wydarzenia (koncerty spektakle itp.)
 - [ ] Edycja danych uczestników na bilecie
 
       Udostępnić możliwość aktualizacji danych przypisanych do biletu o ile pozwala oferta.
+
+## Dokumentacja
+
+Dokumentacja projektu, w tym API klientów i rezerwacji, znajduje się w
+[dokumencie TeX](docs/main.tex).

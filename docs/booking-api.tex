@@ -1,0 +1,161 @@
+\subsection{API klientów}
+
+Rejestr klientów przechowuje dane kupujących, nie konta z hasłami.
+Ścieżka bazowa to \texttt{/clients}. Kontroler zwraca bezpośrednio
+\hyperref[schema:client]{obiekty Client}, analogicznie do katalogu ofert.
+
+\subsubsection{Endpointy API}
+
+\begin{table}[H]
+  \centering
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\textwidth}{|l|l|X|}
+    \hline
+    \textbf{Endpoint} & \textbf{Metoda} & \textbf{Opis} \\
+    \hline
+    \texttt{/clients} & \texttt{POST} & Tworzy klienta na podstawie pól \texttt{name} i \texttt{email}. UUID nadaje serwer. \\
+    \hline
+    \texttt{/clients} & \texttt{GET} & Zwraca listę klientów. \\
+    \hline
+    \texttt{/clients/\{id\}} & \texttt{GET} & Zwraca klienta o podanym UUID. \\
+    \hline
+    \texttt{/clients/\{id\}} & \texttt{POST} & Zastępuje oba pola: \texttt{name} i \texttt{email}. UUID nie zmienia się. \\
+    \hline
+    \texttt{/clients/\{id\}} & \texttt{DELETE} & Usuwa klienta bez rezerwacji i zwraca usunięty obiekt. \\
+    \hline
+  \end{tabularx}
+  \caption{Endpointy API \texttt{/clients}}
+  \label{tab:client-endpoints}
+\end{table}
+
+\begin{figure}[H]
+\begin{verbatim}
+{
+  "name": "Jan Kowalski",
+  "email": "jan@example.org"
+}
+\end{verbatim}
+\caption{Żądanie utworzenia lub aktualizacji klienta}
+\label{schema:client-request}
+\end{figure}
+
+Po usunięciu otaczających białych znaków \texttt{name} musi mieć od 1 do 255 znaków,
+a \texttt{email} nie więcej niż 254 znaki i poprawną podstawową składnię adresu.
+E-mail nie jest unikalnym kluczem.
+Rezerwacja przechowuje UUID klienta.
+
+\subsubsection{Kody odpowiedzi API klientów}
+
+\begin{table}[H]
+  \centering
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\textwidth}{|l|l|X|}
+    \hline
+    \textbf{Endpoint} & \textbf{Kod odpowiedzi} & \textbf{Opis} \\
+    \hline
+    Wszystkie & 200 OK & Operacja zakończona poprawnie; odpowiedzią jest klient lub lista klientów. \\
+    \hline
+    \texttt{POST}, \texttt{POST} & 400 Bad Request & Brak wymaganych pól lub niepoprawne dane. \\
+    \hline
+    Operacje na \texttt{/\{id\}} & 404 Not Found & Klient nie istnieje, także dla niepoprawnego identyfikatora w ścieżce. \\
+    \hline
+    \texttt{DELETE /clients/\{id\}} & 409 Conflict & Klient ma rezerwacje i nie może zostać usunięty. \\
+    \hline
+  \end{tabularx}
+  \caption{Kody odpowiedzi endpointów klientów}
+  \label{tab:client-response-codes}
+\end{table}
+
+\subsection{API rezerwacji}
+
+Ścieżka bazowa to \texttt{/reservations}. Kontroler zwraca bezpośrednio
+\hyperref[schema:reservation]{obiekty Reservation}.
+
+\subsubsection{Endpointy API}
+
+\begin{table}[H]
+  \centering
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\textwidth}{|l|l|X|}
+    \hline
+    \textbf{Endpoint} & \textbf{Metoda} & \textbf{Opis} \\
+    \hline
+    \texttt{/reservations} & \texttt{POST} & Tworzy koszyk na podstawie \texttt{clientId} oraz niepustej listy \texttt{items}. \\
+    \hline
+    \texttt{/reservations/\{id\}} & \texttt{GET} & Zwraca rezerwację o podanym UUID. \\
+    \hline
+    \texttt{/reservations} & \texttt{GET} & Zwraca rezerwacje klienta wskazanego wymaganym parametrem \texttt{clientId}. \\
+    \hline
+  \end{tabularx}
+  \caption{Endpointy API rezerwacji (\texttt{/reservations})}
+  \label{tab:reservation-endpoints}
+\end{table}
+
+\begin{figure}[H]
+\begin{verbatim}
+{
+  "clientId": "11111111-1111-4111-8111-111111111111",
+  "items": [
+    {
+      "offerId": "22222222-2222-4222-8222-222222222222",
+      "quantity": 2
+    }
+  ]
+}
+\end{verbatim}
+\caption{Żądanie utworzenia rezerwacji}
+\label{schema:create-reservation-request}
+\end{figure}
+
+Podane UUID muszą wskazywać istniejącego klienta i oferty. Serwer nadaje UUID
+rezerwacji i pozycji, znaczniki czasu oraz pobiera zrzuty ofert z katalogu.
+Przekazane dodatkowo ceny lub zrzuty nie nadpisują wartości katalogowych.
+
+Pole \texttt{quantity} jest dodatnią liczbą całkowitą, nie może przekroczyć quantity oferty w katalogu.
+
+\subsubsection{Kody odpowiedzi API rezerwacji}
+
+\begin{table}[H]
+  \centering
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\textwidth}{|l|l|X|}
+    \hline
+    \textbf{Endpoint} & \textbf{Kod odpowiedzi} & \textbf{Opis} \\
+    \hline
+    Wszystkie & 200 OK & Utworzona lub odczytana rezerwacja, albo lista rezerwacji klienta. \\
+    \hline
+    \texttt{POST /reservations} & 400 Bad Request & Brak pozycji, błędny UUID, niepoprawna ilość lub przekroczenie zakresu sumy ilości. \\
+    \hline
+    \texttt{GET /reservations} & 400 Bad Request & Brak parametru \texttt{clientId}. \\
+    \hline
+    Wszystkie & 404 Not Found & Wskazany klient, oferta lub rezerwacja nie istnieje. \\
+    \hline
+    \texttt{POST /reservations} & 409 Conflict & Niedostateczny zapas lub konflikt wersji oferty. \\
+    \hline
+  \end{tabularx}
+  \caption{Kody odpowiedzi endpointów rezerwacji}
+  \label{tab:reservation-response-codes}
+\end{table}
+
+\subsection{Walidacja, spójność i zapis koszyka}
+
+\begin{itemize}
+  \item \textbf{Współbieżność}: aktualizacja porównuje wersję oferty i zwiększa ją.
+    Warunek wersji zapobiega nadpisaniu nowszej zmiany.
+  \item \textbf{Transakcja}: utworzenie rezerwacji, odjęcie wszystkich ilości i zapis
+    JSON pozycji są jedną transakcją. Dowolny błąd cofa cały koszyk i zmiany zapasu.
+    Pierwsza operacja, \texttt{INSERT} rezerwacji dla istniejącego klienta,
+    uzyskuje blokadę zapisu SQLite przed odczytem ofert. Pusty koszyk roboczy nie jest zatwierdzany.
+  \item \textbf{Historia}: \texttt{offer\_items\_data} zawiera pełne pozycje ze
+    zrzutami ofert. Późniejsze zmiany lub usunięcie oferty nie zmieniają rezerwacji.
+    \texttt{offerSnapshot.quantity} to zapas przed zakupem, a ilość pozycji
+    oznacza liczbę rezerwowanych sztuk.
+\end{itemize}
+
+\subsection{Konfiguracja i ograniczenia}
+
+
+\paragrpah{Zakres}: statusy, dane i reguły uczestników, płatności,
+    anulowanie i zwalnianie zapasu, wygasanie, konkretne miejsca oraz oferty
+    zależne nie są zaimplementowane. Rezerwacje zajmują zapas bezterminowo,
+    ponowiony \texttt{POST} tworzy kolejny koszyk.

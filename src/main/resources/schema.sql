@@ -1,8 +1,8 @@
-DROP TABLE IF EXISTS vendor;
-DROP TABLE IF EXISTS offer;
+DROP TABLE IF EXISTS payment;
 DROP TABLE IF EXISTS reservation;
 DROP TABLE IF EXISTS client;
-DROP TABLE IF EXISTS payment;
+DROP TABLE IF EXISTS offer;
+DROP TABLE IF EXISTS vendor;
 
 CREATE TABLE vendor
 (
@@ -49,3 +49,5 @@ CREATE TABLE payment
     currency          TEXT    NOT NULL,
     payment_timestamp INTEGER NOT NULL
 );
+
+CREATE INDEX reservation_client_id_idx ON reservation (client_id);

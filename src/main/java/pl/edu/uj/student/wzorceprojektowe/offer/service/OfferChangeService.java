@@ -38,11 +38,6 @@ public class OfferChangeService {
             () -> new OfferNotFoundException("Offer with id %s not found".formatted(offerId)));
   }
 
-  /**
-   * Validates and deducts inventory, returning the snapshot before the deduction.
-   * Reservation creation includes this operation in its transaction; optimistic locking prevents
-   * a concurrent catalogue update from overwriting the quantity read here.
-   */
   public Offer reserveQuantity(String offerId, int quantity) {
     if (quantity <= 0) {
       throw new RequestValidationException("Reserved quantity must be positive");

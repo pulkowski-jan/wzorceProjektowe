@@ -19,12 +19,12 @@ Rejestr klientów przechowuje dane kupujących, nie konta z hasłami.
     \hline
     \texttt{/clients/\{id\}} & \texttt{GET} & Zwraca klienta o podanym UUID. \\
     \hline
-    \texttt{/clients/\{id\}} & \texttt{PUT} & Zastępuje oba pola: \texttt{name} i \texttt{email}. UUID nie zmienia się. \\
+    \texttt{/clients/\{id\}} & \texttt{POST} & Zastępuje oba pola: \texttt{name} i \texttt{email}. UUID nie zmienia się. \\
     \hline
     \texttt{/clients/\{id\}} & \texttt{DELETE} & Usuwa klienta bez rezerwacji i zwraca usunięty obiekt. \\
     \hline
   \end{tabularx}
-  \caption{Endpointy API klientów (\texttt{/clients})}
+  \caption{Endpointy API \texttt{/clients}}
   \label{tab:client-endpoints}
 \end{table}
 
@@ -41,8 +41,8 @@ Rejestr klientów przechowuje dane kupujących, nie konta z hasłami.
 
 Po usunięciu otaczających białych znaków \texttt{name} musi mieć od 1 do 255 znaków,
 a \texttt{email} nie więcej niż 254 znaki i poprawną podstawową składnię adresu.
-Nie jest sprawdzana dostarczalność poczty. E-mail nie jest unikalnym kluczem.
-Rezerwacja przechowuje UUID klienta, nie kopię jego danych kontaktowych.
+E-mail nie jest unikalnym kluczem.
+Rezerwacja przechowuje UUID klienta.
 
 \subsubsection{Kody odpowiedzi API klientów}
 
@@ -55,7 +55,7 @@ Rezerwacja przechowuje UUID klienta, nie kopię jego danych kontaktowych.
     \hline
     Wszystkie & 200 OK & Operacja zakończona poprawnie; odpowiedzią jest klient lub lista klientów. \\
     \hline
-    \texttt{POST}, \texttt{PUT} & 400 Bad Request & Brak wymaganych pól lub niepoprawne dane. \\
+    \texttt{POST}, \texttt{POST} & 400 Bad Request & Brak wymaganych pól lub niepoprawne dane. \\
     \hline
     Operacje na \texttt{/\{id\}} & 404 Not Found & Klient nie istnieje, także dla niepoprawnego identyfikatora w ścieżce. \\
     \hline
@@ -69,8 +69,7 @@ Rezerwacja przechowuje UUID klienta, nie kopię jego danych kontaktowych.
 \subsection{API rezerwacji}
 
 Ścieżka bazowa to \texttt{/reservations}. Kontroler zwraca bezpośrednio
-\hyperref[schema:reservation]{obiekty Reservation}, a obsługa wyjątków jest
-zdefiniowana w kontrolerze, tak jak w katalogu ofert.
+\hyperref[schema:reservation]{obiekty Reservation}.
 
 \subsubsection{Endpointy API}
 
@@ -108,16 +107,11 @@ zdefiniowana w kontrolerze, tak jak w katalogu ofert.
 \label{schema:create-reservation-request}
 \end{figure}
 
-Podane UUID-y muszą wskazywać istniejącego klienta i oferty. Serwer nadaje UUID
+Podane UUID muszą wskazywać istniejącego klienta i oferty. Serwer nadaje UUID
 rezerwacji i pozycji, znaczniki czasu oraz pobiera zrzuty ofert z katalogu.
 Przekazane dodatkowo ceny lub zrzuty nie nadpisują wartości katalogowych.
-Statusy i dane uczestników nie są przyjmowane jako pola modelu ani zapisywane.
 
-Pole \texttt{quantity} jest dodatnią liczbą całkowitą JSON z zakresu typu Java
-\texttt{int}. Wartości ułamkowe i tekstowe są odrzucane, nie konwertowane.
-Suma ilości dla powtarzającej się oferty również musi mieścić się w tym zakresie.
-Powtarzające się oferty zachowują osobne pozycje koszyka, ale mają wspólny zrzut
-i jedną zagregowaną operację odjęcia zapasu.
+Pole \texttt{quantity} jest dodatnią liczbą całkowitą, nie może przekroczyć quantity oferty w katalogu.
 
 \subsubsection{Kody odpowiedzi API rezerwacji}
 
@@ -146,56 +140,22 @@ i jedną zagregowaną operację odjęcia zapasu.
 \subsection{Walidacja, spójność i zapis koszyka}
 
 \begin{itemize}
-  \item \textbf{Granica modułu ofert}: \texttt{ReservationService} korzysta z
-    \texttt{OfferChangeService}, nie z repozytorium ofert.
-    \texttt{OfferChangeService.reserveQuantity} sprawdza w kodzie Java dodatniość
-    ilości oraz dostępny zapas. Przy braku zapasu zgłasza konflikt przed zapisem.
-    Nowa dostępność jest obliczana w usłudze i zapisywana istniejącą metodą
-    aktualizacji z kontrolą wersji.
   \item \textbf{Współbieżność}: aktualizacja porównuje wersję oferty i zwiększa ją.
-    Warunek wersji zapobiega nadpisaniu nowszej zmiany; nie zastępuje walidacji
-    ilości w usłudze. Istniejące ograniczenie schematu dla nieujemnej dostępności
-    pozostaje dodatkową ochroną, nie mechanizmem walidacji żądań.
+    Warunek wersji zapobiega nadpisaniu nowszej zmiany.
   \item \textbf{Transakcja}: utworzenie rezerwacji, odjęcie wszystkich ilości i zapis
     JSON pozycji są jedną transakcją. Dowolny błąd cofa cały koszyk i zmiany zapasu.
     Pierwsza operacja, \texttt{INSERT} rezerwacji dla istniejącego klienta,
-    uzyskuje blokadę zapisu SQLite przed odczytem ofert. Pusty koszyk roboczy
-    nigdy nie jest zatwierdzany.
+    uzyskuje blokadę zapisu SQLite przed odczytem ofert. Pusty koszyk roboczy nie jest zatwierdzany.
   \item \textbf{Historia}: \texttt{offer\_items\_data} zawiera pełne pozycje ze
     zrzutami ofert. Późniejsze zmiany lub usunięcie oferty nie zmieniają rezerwacji.
     \texttt{offerSnapshot.quantity} to zapas przed zakupem, a ilość pozycji
-    oznacza liczbę rezerwowanych sztuk. Ceny zachowują tekstową reprezentację
-    \texttt{Money} z dwoma miejscami po przecinku.
-  \item \textbf{Czas}: w bazie znaczniki czasu są liczbami milisekund od epoki Unix,
-    w API wartościami ISO-8601 w UTC. Przy utworzeniu wszystkie znaczniki są równe.
-    Wersja rezerwacji wynosi 1 i nie jest eksponowana przez API.
-  \item \textbf{Repozytoria}: szablony zapytań SQL są stałymi w klasach repozytoriów,
-    analogicznie do istniejącego repozytorium ofert.
+    oznacza liczbę rezerwowanych sztuk.
 \end{itemize}
 
 \subsection{Konfiguracja i ograniczenia}
 
-\begin{itemize}
-  \item \textbf{Klucze obce}: \texttt{connection-init-sql} w konfiguracji Hikari
-    wykonuje \texttt{PRAGMA foreign\_keys = ON} na każdym nowym połączeniu.
-    Zapewnia to egzekwowanie relacji, w szczególności rezerwacja--klient.
-    Kolejność usuwania tabel w skrypcie inicjalizacyjnym uwzględnia te zależności.
-  \item \textbf{Oczekiwanie na blokadę}: właściwość sterownika SQLite
-    \texttt{busy\_timeout=10000} pozwala czekać do 10 sekund na zwolnienie blokady.
-    Nie jest to ponawianie żądania HTTP ani zwiększenie liczby równoległych
-    zapisów SQLite.
-  \item \textbf{Porządek konfiguracji}: usunięto duplikaty ustawień źródła danych
-    i inicjalizacji SQL spod sekcji \texttt{server}, która nie konfiguruje tych
-    mechanizmów Spring Boot. Właściwe ustawienia pozostają pod \texttt{spring}.
-    Port 8081, plik \texttt{offers.db} i tryb inicjalizacji nie zostały zmienione.
-  \item \textbf{Inicjalizacja}: domyślne \texttt{spring.sql.init.mode=always}
-    odtwarza schemat i usuwa wszystkie dane przy starcie, także klientów
-    i rezerwacje. Po pierwszej inicjalizacji można zachować bazę przez ustawienie
-    \texttt{SPRING\_SQL\_INIT\_MODE=never}. Migracje schematu pozostają poza zakresem.
-  \item \textbf{Zakres}: statusy, dane i reguły uczestników, płatności,
+
+\paragrpah{Zakres}: statusy, dane i reguły uczestników, płatności,
     anulowanie i zwalnianie zapasu, wygasanie, konkretne miejsca oraz oferty
     zależne nie są zaimplementowane. Rezerwacje zajmują zapas bezterminowo,
-    ponowiony \texttt{POST} tworzy kolejny koszyk, a listy nie mają paginacji.
-  \item \textbf{Dostęp}: projekt nie ma uwierzytelniania ani autoryzacji.
-    Endpointów udostępniających dane klientów nie należy wystawiać publicznie.
-\end{itemize}
+    ponowiony \texttt{POST} tworzy kolejny koszyk.

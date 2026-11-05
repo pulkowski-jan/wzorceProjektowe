@@ -1,14 +1,16 @@
 package pl.edu.uj.student.wzorceprojektowe.client.controller;
 
-import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 import pl.edu.uj.student.wzorceprojektowe.client.model.Client;
 import pl.edu.uj.student.wzorceprojektowe.client.model.ClientRequest;
 import pl.edu.uj.student.wzorceprojektowe.client.service.ClientService;
+import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestConflictException;
+import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
+import pl.edu.uj.student.wzorceprojektowe.shared.exception.ResourceNotFoundException;
 
 @RestController
 @RequestMapping("/clients")
@@ -17,9 +19,8 @@ public class ClientController {
   private final ClientService service;
 
   @PostMapping
-  public ResponseEntity<Client> create(@RequestBody ClientRequest request) {
-    Client client = service.create(request);
-    return ResponseEntity.created(URI.create("/clients/" + client.id())).body(client);
+  public Client create(@RequestBody ClientRequest request) {
+    return service.create(request);
   }
 
   @GetMapping
@@ -38,8 +39,22 @@ public class ClientController {
   }
 
   @DeleteMapping("/{id}")
-  @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void delete(@PathVariable String id) {
-    service.delete(id);
+  public Client delete(@PathVariable String id) {
+    return service.delete(id);
+  }
+
+  @ExceptionHandler(RequestValidationException.class)
+  public ErrorResponse handleRequestValidationException(RequestValidationException e) {
+    return ErrorResponse.create(e, HttpStatus.BAD_REQUEST, e.getMessage());
+  }
+
+  @ExceptionHandler(ResourceNotFoundException.class)
+  public ErrorResponse handleResourceNotFoundException(ResourceNotFoundException e) {
+    return ErrorResponse.create(e, HttpStatus.NOT_FOUND, e.getMessage());
+  }
+
+  @ExceptionHandler(RequestConflictException.class)
+  public ErrorResponse handleRequestConflictException(RequestConflictException e) {
+    return ErrorResponse.create(e, HttpStatus.CONFLICT, e.getMessage());
   }
 }

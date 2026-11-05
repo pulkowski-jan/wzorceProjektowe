@@ -36,7 +36,7 @@ class BookingRestartTest {
           new Offer(null, "Concert", new Vendor("Vendor"), new Money("PLN", "12.34"), "", 3, null));
       reservation = first.getBean(ReservationService.class).create(
           new CreateReservationRequest(client.id(),
-              List.of(new CreateReservationRequest.Item(offer.id(), 2, null))));
+              List.of(new CreateReservationRequest.Item(offer.id(), 2))));
     }
     try (var restarted = start("never")) {
       assertThat(restarted.getBean(ClientService.class).findById(client.id())).isEqualTo(client);

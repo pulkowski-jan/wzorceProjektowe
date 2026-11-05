@@ -40,12 +40,12 @@ public class ClientService {
   }
 
   @Transactional
-  public void delete(String id) {
+  public Client delete(String id) {
     // Write first: SQLite serializes this with reservation creation.
-    if (!repository.deleteIfUnreferenced(id)) {
+    return repository.deleteIfUnreferenced(id).orElseGet(() -> {
       findById(id);
       throw new RequestConflictException("A client with reservations cannot be deleted");
-    }
+    });
   }
 
   private Client validated(String id, ClientRequest request) {

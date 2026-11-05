@@ -65,7 +65,7 @@ class BookingIntegrationTest {
   void clientCrudAndGeneratedIdentity() throws Exception {
     JsonNode client = response(post("/clients"), """
         {"id":"untrusted-id","name":"  Buyer  ","email":" buyer@example.org "}
-        """, 201);
+        """, 200);
     String id = client.get("id").asString();
     assertThat(UUID.fromString(id)).isNotNull();
     assertThat(client.get("name").asString()).isEqualTo("Buyer");
@@ -76,24 +76,26 @@ class BookingIntegrationTest {
         "{\"name\":\"Company\",\"email\":\"company@example.org\"}", 200);
     assertThat(updated.get("id").asString()).isEqualTo(id);
     assertThat(response(get("/clients/{id}", id), null, 200)).isEqualTo(updated);
-    response(delete("/clients/{id}", id), null, 204);
+    assertThat(response(delete("/clients/{id}", id), null, 200)).isEqualTo(updated);
     response(get("/clients/{id}", id), null, 404);
     response(delete("/clients/{id}", id), null, 404);
   }
 
   @Test
-  void createResponsesIncludeLocationHeaders() throws Exception {
+  void createResponsesFollowExistingControllerConventions() throws Exception {
     var clientResult = mvc.perform(post("/clients").contentType(MediaType.APPLICATION_JSON)
             .content("{\"name\":\"Buyer\",\"email\":\"buyer@example.org\"}"))
-        .andExpect(status().isCreated()).andReturn().getResponse();
+        .andExpect(status().isOk()).andReturn().getResponse();
     String id = mapper.readTree(clientResult.getContentAsString()).get("id").asString();
-    assertThat(clientResult.getHeader("Location")).isEqualTo("/clients/" + id);
+    assertThat(clientResult.getHeader("Location")).isNull();
+    assertThat(UUID.fromString(id)).isNotNull();
     String offer = createOffer(2);
     var reservationResult = mvc.perform(post("/reservations").contentType(MediaType.APPLICATION_JSON)
             .content(basket(id, item(offer, 1))))
-        .andExpect(status().isCreated()).andReturn().getResponse();
+        .andExpect(status().isOk()).andReturn().getResponse();
     String reservationId = mapper.readTree(reservationResult.getContentAsString()).get("id").asString();
-    assertThat(reservationResult.getHeader("Location")).isEqualTo("/reservations/" + reservationId);
+    assertThat(reservationResult.getHeader("Location")).isNull();
+    assertThat(UUID.fromString(reservationId)).isNotNull();
   }
 
   @ParameterizedTest
@@ -131,13 +133,13 @@ class BookingIntegrationTest {
   }
 
   @Test
-  void reservationRoundTripPersistsSnapshotStatusParticipantAndTimestamps() throws Exception {
+  void reservationRoundTripPersistsSnapshotAndTimestamps() throws Exception {
     String client = createClient();
     String offer = createOffer(5);
     JsonNode original = response(get("/offer/{id}", offer), null, 200);
     JsonNode created = response(post("/reservations"), basket(client, """
-        {"offerId":"%s","quantity":2,"participant":{"name":" Alice ","email":"alice@example.org"}}
-        """.formatted(offer)), 201);
+        {"offerId":"%s","quantity":2}
+        """.formatted(offer)), 200);
     String id = created.get("id").asString();
     assertThat(UUID.fromString(id)).isNotNull();
     assertThat(created.get("clientId").asString()).isEqualTo(client);
@@ -146,8 +148,8 @@ class BookingIntegrationTest {
     assertThat(line.get("offerSnapshot")).isEqualTo(original);
     assertThat(line.get("offerSnapshot").get("price").get("amount").asString()).isEqualTo("1.01");
     assertThat(line.get("quantity").asInt()).isEqualTo(2);
-    assertThat(line.get("status").asString()).isEqualTo("RESERVED");
-    assertThat(line.get("participant").get("name").asString()).isEqualTo("Alice");
+    assertThat(line.has("status")).isFalse();
+    assertThat(line.has("participant")).isFalse();
     assertThat(line.get("timestamp")).isEqualTo(created.get("createTimestamp"));
     assertThat(created.get("createTimestamp").isString()).isTrue();
     assertThat(Instant.parse(created.get("createTimestamp").asString())).isNotNull();
@@ -166,7 +168,7 @@ class BookingIntegrationTest {
   @Test
   void snapshotsSurviveCatalogueUpdatesAndDeletion() throws Exception {
     String offer = createOffer(4);
-    JsonNode created = response(post("/reservations"), basket(createClient(), item(offer, 1)), 201);
+    JsonNode created = response(post("/reservations"), basket(createClient(), item(offer, 1)), 200);
     response(post("/offer/update"), """
         {"id":"%s","name":"Changed","price":{"amount":"99.00","currency":"EUR"}}
         """.formatted(offer), 200);
@@ -179,26 +181,25 @@ class BookingIntegrationTest {
   void repeatedOffersKeepSeparateLinesButUseOneSnapshotAndStockDeduction() throws Exception {
     String offer = createOffer(5);
     JsonNode created = response(post("/reservations"),
-        basket(createClient(), item(offer, 2) + "," + item(offer, 3)), 201);
+        basket(createClient(), item(offer, 2) + "," + item(offer, 3)), 200);
     JsonNode lines = created.get("items");
     assertThat(lines.size()).isEqualTo(2);
     assertThat(lines.get(0).get("lineId")).isNotEqualTo(lines.get(1).get("lineId"));
     assertThat(lines.get(0).get("offerSnapshot")).isEqualTo(lines.get(1).get("offerSnapshot"));
-    assertThat(lines.get(0).get("participant").isNull()).isTrue();
+    assertThat(lines.get(0).has("participant")).isFalse();
     assertThat(offers.findById(offer).orElseThrow().quantity()).isZero();
     assertThat(offers.findById(offer).orElseThrow().version()).isEqualTo(2);
   }
 
   @Test
-  void basketCanContainMultipleOffersAndParticipantEmailIsOptional() throws Exception {
+  void basketCanContainMultipleOffers() throws Exception {
     String first = createOffer(4);
     String second = createOffer(3);
     JsonNode created = response(post("/reservations"), basket(createClient(),
         item(first, 2) + "," + """
-            {"offerId":"%s","quantity":1,"participant":{"name":"Alice"}}
-            """.formatted(second)), 201);
+            {"offerId":"%s","quantity":1}
+            """.formatted(second)), 200);
     assertThat(created.get("items").size()).isEqualTo(2);
-    assertThat(created.get("items").get(1).get("participant").get("email").isNull()).isTrue();
     assertThat(offers.findById(first).orElseThrow().quantity()).isEqualTo(2);
     assertThat(offers.findById(second).orElseThrow().quantity()).isEqualTo(2);
     assertThat(response(get("/reservations/{id}", created.get("id").asString()), null, 200))
@@ -209,7 +210,7 @@ class BookingIntegrationTest {
   void inventoryDeductionInvalidatesStaleCatalogueWrites() throws Exception {
     String id = createOffer(3);
     var stale = offers.findById(id).orElseThrow();
-    response(post("/reservations"), basket(createClient(), item(id, 1)), 201);
+    response(post("/reservations"), basket(createClient(), item(id, 1)), 200);
     assertThatThrownBy(() -> offers.update(stale)).isInstanceOf(OptimisticLockingFailureException.class);
     assertThat(offers.findById(id).orElseThrow().quantity()).isEqualTo(2);
   }
@@ -219,8 +220,8 @@ class BookingIntegrationTest {
     String client = createClient();
     String other = createClient();
     String offer = createOffer(3);
-    JsonNode reservation = response(post("/reservations"), basket(client, item(offer, 1)), 201);
-    response(post("/reservations"), basket(other, item(offer, 1)), 201);
+    JsonNode reservation = response(post("/reservations"), basket(client, item(offer, 1)), 200);
+    response(post("/reservations"), basket(other, item(offer, 1)), 200);
     JsonNode found = response(get("/reservations").param("clientId", client), null, 200);
     assertThat(found.size()).isEqualTo(1);
     assertThat(found.get(0)).isEqualTo(reservation);
@@ -260,13 +261,7 @@ class BookingIntegrationTest {
         basket("CLIENT", "{\"offerId\":\"OFFER\",\"quantity\":\"1\"}"),
         basket("CLIENT", "{\"offerId\":\"OFFER\",\"quantity\":true}"),
         basket("CLIENT", "{\"offerId\":\"OFFER\",\"quantity\":2147483648}"),
-        basket("CLIENT", item("OFFER", Integer.MAX_VALUE) + "," + item("OFFER", 1)),
-        basket("CLIENT", """
-            {"offerId":"OFFER","quantity":1,"participant":{"name":" "}}
-            """),
-        basket("CLIENT", """
-            {"offerId":"OFFER","quantity":1,"participant":{"name":"Alice","email":"invalid"}}
-            """));
+        basket("CLIENT", item("OFFER", Integer.MAX_VALUE) + "," + item("OFFER", 1)));
   }
 
   @Test
@@ -312,7 +307,7 @@ class BookingIntegrationTest {
         """);
     try {
       var request = new CreateReservationRequest(client,
-          List.of(new CreateReservationRequest.Item(offer, 1, null)));
+          List.of(new CreateReservationRequest.Item(offer, 1)));
       assertThatThrownBy(() -> service.create(request)).isInstanceOf(DataAccessException.class);
       assertThat(count("reservation")).isZero();
       assertThat(offers.findById(offer).orElseThrow().quantity()).isEqualTo(2);
@@ -351,14 +346,14 @@ class BookingIntegrationTest {
       start.countDown();
       int bookingStatus = booking.get(20, TimeUnit.SECONDS);
       int deletionStatus = deletion.get(20, TimeUnit.SECONDS);
-      if (bookingStatus == 201) {
+      if (bookingStatus == 200) {
         assertThat(deletionStatus).isEqualTo(409);
         assertThat(count("client")).isEqualTo(1);
         assertThat(count("reservation")).isEqualTo(1);
         assertThat(offers.findById(offer).orElseThrow().quantity()).isZero();
       } else {
         assertThat(bookingStatus).isEqualTo(404);
-        assertThat(deletionStatus).isEqualTo(204);
+        assertThat(deletionStatus).isEqualTo(200);
         assertThat(count("client")).isZero();
         assertThat(count("reservation")).isZero();
         assertThat(offers.findById(offer).orElseThrow().quantity()).isEqualTo(1);
@@ -369,21 +364,29 @@ class BookingIntegrationTest {
   }
 
   @Test
-  void callersCannotOverrideSnapshotsStatusOrIdentifiers() throws Exception {
+  void callersCannotOverrideSnapshotsOrIdentifiersAndRemovedFieldsAreNotPersisted() throws Exception {
     String client = createClient();
     String offer = createOffer(2);
     JsonNode created = response(post("/reservations"), """
         {"id":"fake","clientId":"%s","items":[{
           "offerId":"%s","quantity":1,"lineId":"fake","status":"PAID",
+          "participant":{"name":"Unstored person","email":"person@example.org"},
           "timestamp":"2000-01-01T00:00:00Z",
           "offerSnapshot":{"price":{"amount":"0.00","currency":"PLN"}}
         }]}
-        """.formatted(client, offer), 201);
+        """.formatted(client, offer), 200);
     assertThat(created.get("id").asString()).isNotEqualTo("fake");
     JsonNode line = created.get("items").get(0);
     assertThat(line.get("lineId").asString()).isNotEqualTo("fake");
-    assertThat(line.get("status").asString()).isEqualTo("RESERVED");
+    assertThat(line.has("status")).isFalse();
+    assertThat(line.has("participant")).isFalse();
     assertThat(line.get("offerSnapshot").get("price").get("amount").asString()).isEqualTo("1.01");
+    assertThat(response(get("/reservations/{id}", created.get("id").asString()), null, 200))
+        .isEqualTo(created);
+    String stored = jdbc.queryForObject(
+        "SELECT offer_items_data FROM reservation WHERE id = ?",
+        String.class, created.get("id").asString());
+    assertThat(stored).doesNotContain("participant", "status", "Unstored person");
   }
 
   @Test
@@ -420,8 +423,8 @@ class BookingIntegrationTest {
       for (Future<Integer> result : results) {
         statuses.add(result.get(20, TimeUnit.SECONDS));
       }
-      assertThat(statuses).containsOnly(201, 409);
-      assertThat(statuses.stream().filter(code -> code == 201).count()).isEqualTo(inventory);
+      assertThat(statuses).containsOnly(200, 409);
+      assertThat(statuses.stream().filter(code -> code == 200).count()).isEqualTo(inventory);
       assertThat(count("reservation")).isEqualTo(inventory);
       assertThat(offers.findById(offer).orElseThrow().quantity()).isZero();
     } finally {
@@ -430,7 +433,7 @@ class BookingIntegrationTest {
   }
 
   private String createClient() throws Exception {
-    return response(post("/clients"), "{\"name\":\"Buyer\",\"email\":\"buyer@example.org\"}", 201)
+    return response(post("/clients"), "{\"name\":\"Buyer\",\"email\":\"buyer@example.org\"}", 200)
         .get("id").asString();
   }
 

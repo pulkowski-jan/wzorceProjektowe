@@ -7,6 +7,4 @@ public record OrderItem(
     String lineId,
     Offer offerSnapshot,
     int quantity,
-    Instant timestamp,
-    ReservationStatus status,
-    Participant participant) {}
+    Instant timestamp) {}

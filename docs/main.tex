@@ -254,29 +254,7 @@ API sprzedawców jest częścią modułu katalogu ofert. Ścieżka bazowa to \te
   \label{tab:schema-reservation}
 \end{table}
 
-\subsection{API klientów i rezerwacji}
-
-Rejestr klientów udostępnia \texttt{POST /clients}, \texttt{GET /clients},
-\texttt{GET /clients/\{id\}}, \texttt{PUT /clients/\{id\}} oraz
-\texttt{DELETE /clients/\{id\}}. Tworzenie zwraca \texttt{201 Created},
-usunięcie \texttt{204 No Content}. Klienta posiadającego rezerwacje nie można
-usunąć (\texttt{409 Conflict}).
-
-Koszyk tworzony jest przez \texttt{POST /reservations} na podstawie
-\texttt{clientId} i niepustej listy pozycji z \texttt{offerId}, dodatnim
-\texttt{quantity} i opcjonalnym \texttt{participant}. API odczytu to
-\texttt{GET /reservations/\{id\}} oraz
-\texttt{GET /reservations?clientId=\{id\}}.
-Serwer nadaje identyfikatory, czas i status oraz pobiera zrzuty ofert z katalogu.
-Zapis rezerwacji i odjęcie całego zapasu są jedną transakcją;
-niedostateczny zapas daje \texttt{409 Conflict} bez częściowego zapisu.
-Zmiany i usunięcia ofert nie zmieniają zapisanych zrzutów.
-
-Wartości czasu w bazie są liczbami milisekund od epoki Unix,
-a w API znacznikami ISO-8601 w UTC. Wersja nowej rezerwacji wynosi 1.
-Zmiany statusu, płatności, anulowanie, wygasanie oraz reguły uczestników
-zależne od typu oferty pozostają poza zakresem tej implementacji.
-Pełny kontrakt i przykłady znajdują się w pliku \texttt{docs/booking-api.md}.
+\input{booking-api}
 
 \newpage
 

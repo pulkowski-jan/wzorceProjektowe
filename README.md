@@ -22,8 +22,9 @@ REST API do rezerwowania biletów na wydarzenia (koncerty spektakle itp.)
 - [x] Zapis i odczyt koszyka rezerwacji
       
       Zaimplementować tworzenie rezerwacji zawierającej oferty w momencie zakupu
-      (ofertę zapakować we wrapper z timestampem i statusem (zaklepane/opłacone/anulowane) ilością sztuk, oraz opcjonalnymi danymi uczestnika 
+      (ofertę zapakować we wrapper z timestampem i ilością sztuk
       i dump listy tych itemów do bazy).
+      Statusy i dane uczestników pozostają poza zakresem bieżącej implementacji.
 
 - [ ] Weryfikacja reguł uczestników
 
@@ -64,15 +65,7 @@ REST API do rezerwowania biletów na wydarzenia (koncerty spektakle itp.)
 
       Udostępnić możliwość aktualizacji danych przypisanych do biletu o ile pozwala oferta.
 
-## Rejestr klientów i koszyk rezerwacji
+## Dokumentacja
 
-Opis kontraktu, przykład użycia, walidacja i ograniczenia:
-[API klientów i rezerwacji](docs/booking-api.md).
-
-Uruchomienie: `./gradlew bootRun` (Java 21). Testy: `./gradlew test`.
-
-Uwaga: domyślna konfiguracja demonstracyjna (`spring.sql.init.mode=always`) odtwarza
-schemat i **usuwa wszystkie dane przy każdym uruchomieniu**, także klientów i rezerwacje.
-Aby zachować istniejącą bazę po jej pierwszej inicjalizacji, uruchom aplikację
-z `SPRING_SQL_INIT_MODE=never`. Projekt nie ma jeszcze migracji schematu ani
-uwierzytelniania/autoryzacji; nie należy publicznie udostępniać danych klientów.
+Dokumentacja projektu, w tym API klientów i rezerwacji, znajduje się w
+[dokumencie TeX](docs/main.tex).

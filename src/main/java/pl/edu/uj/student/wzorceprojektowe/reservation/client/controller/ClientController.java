@@ -1,16 +1,16 @@
-package pl.edu.uj.student.wzorceprojektowe.client.controller;
+package pl.edu.uj.student.wzorceprojektowe.reservation.client.controller;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
-import pl.edu.uj.student.wzorceprojektowe.client.model.Client;
-import pl.edu.uj.student.wzorceprojektowe.client.model.ClientRequest;
-import pl.edu.uj.student.wzorceprojektowe.client.service.ClientService;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Client;
+import pl.edu.uj.student.wzorceprojektowe.reservation.client.model.ClientRequest;
+import pl.edu.uj.student.wzorceprojektowe.reservation.client.service.ClientService;
+import pl.edu.uj.student.wzorceprojektowe.reservation.client.exception.ClientNotFoundException;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestConflictException;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
-import pl.edu.uj.student.wzorceprojektowe.shared.exception.ResourceNotFoundException;
 
 @RestController
 @RequestMapping("/clients")
@@ -48,8 +48,8 @@ public class ClientController {
     return ErrorResponse.create(e, HttpStatus.BAD_REQUEST, e.getMessage());
   }
 
-  @ExceptionHandler(ResourceNotFoundException.class)
-  public ErrorResponse handleResourceNotFoundException(ResourceNotFoundException e) {
+  @ExceptionHandler(ClientNotFoundException.class)
+  public ErrorResponse handleResourceNotFoundException(ClientNotFoundException e) {
     return ErrorResponse.create(e, HttpStatus.NOT_FOUND, e.getMessage());
   }
 

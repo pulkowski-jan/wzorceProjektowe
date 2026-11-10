@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import pl.edu.uj.student.wzorceprojektowe.offer.model.Offer;
-import pl.edu.uj.student.wzorceprojektowe.offer.model.Vendor;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Vendor;
 import pl.edu.uj.student.wzorceprojektowe.offer.repository.OfferRepository;
 
 @Service

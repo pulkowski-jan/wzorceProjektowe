@@ -1,4 +1,4 @@
-package pl.edu.uj.student.wzorceprojektowe.client.repository;
+package pl.edu.uj.student.wzorceprojektowe.reservation.client.repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -7,7 +7,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import pl.edu.uj.student.wzorceprojektowe.client.model.Client;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Client;
 
 @Repository
 @RequiredArgsConstructor

@@ -1,4 +1,4 @@
-package pl.edu.uj.student.wzorceprojektowe.reservation.model;
+package pl.edu.uj.student.wzorceprojektowe.shared.model;
 
 import java.time.Instant;
 import java.util.List;

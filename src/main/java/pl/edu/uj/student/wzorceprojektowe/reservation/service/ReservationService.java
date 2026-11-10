@@ -2,22 +2,21 @@ package pl.edu.uj.student.wzorceprojektowe.reservation.service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pl.edu.uj.student.wzorceprojektowe.client.service.ClientService;
-import pl.edu.uj.student.wzorceprojektowe.offer.model.Offer;
 import pl.edu.uj.student.wzorceprojektowe.offer.service.OfferChangeService;
+import pl.edu.uj.student.wzorceprojektowe.reservation.client.exception.ClientNotFoundException;
+import pl.edu.uj.student.wzorceprojektowe.reservation.client.service.ClientService;
+import pl.edu.uj.student.wzorceprojektowe.reservation.exception.ReservationNotFoundException;
 import pl.edu.uj.student.wzorceprojektowe.reservation.model.*;
 import pl.edu.uj.student.wzorceprojektowe.reservation.repository.ReservationRepository;
-import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
-import pl.edu.uj.student.wzorceprojektowe.shared.exception.ResourceNotFoundException;
-import pl.edu.uj.student.wzorceprojektowe.shared.util.validator.RequestChecks;
+import pl.edu.uj.student.wzorceprojektowe.reservation.util.CreateReservationRequestValidator;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.OrderItem;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Reservation;
 
 @Service
 @RequiredArgsConstructor
@@ -28,61 +27,49 @@ public class ReservationService {
 
   @Transactional
   public Reservation create(CreateReservationRequest request) {
-    validate(request);
-    // Aggregate repeated offers to prevent overbooking across lines and preserve one snapshot.
+    CreateReservationRequestValidator.validateRequest(request);
     Map<String, Integer> quantities = new LinkedHashMap<>();
     for (var item : request.items()) {
-      try {
-        quantities.merge(item.offerId(), item.quantity(), Math::addExact);
-      } catch (ArithmeticException e) {
-        throw new RequestValidationException("Total quantity exceeds the supported integer range");
-      }
+      quantities.merge(item.offerId(), quantity(item), Integer::sum);
     }
 
     String id = UUID.randomUUID().toString();
     Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     if (!repository.insertForClient(id, request.clientId(), now)) {
-      throw new ResourceNotFoundException("Client not found: " + request.clientId());
+      throw new ClientNotFoundException("Client not found: " + request.clientId());
     }
 
-    Map<String, Offer> snapshots = new LinkedHashMap<>();
+    Map<String, Offer> offerSnapshots = new LinkedHashMap<>();
     for (var entry : quantities.entrySet()) {
       Offer offer = offerChangeService.reserveQuantity(entry.getKey(), entry.getValue());
-      snapshots.put(offer.id(), offer);
+      offerSnapshots.put(offer.id(), offer);
     }
 
     List<OrderItem> items = new ArrayList<>();
     for (var item : request.items()) {
-      items.add(new OrderItem(UUID.randomUUID().toString(), snapshots.get(item.offerId()),
-          item.quantity(), now));
+      items.add(
+          new OrderItem(
+              UUID.randomUUID().toString(),
+              offerSnapshots.get(item.offerId()),
+              quantity(item),
+              now));
     }
     repository.storeItems(id, items);
     return new Reservation(id, request.clientId(), items, now, now);
   }
 
+  private static @NonNull Integer quantity(CreateReservationRequest.Item item) {
+    return Objects.requireNonNullElse(item.quantity(), 1);
+  }
+
   public Reservation findById(String id) {
-    return repository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Reservation not found: " + id));
+    return repository
+        .findById(id)
+        .orElseThrow(() -> new ReservationNotFoundException("Reservation not found: " + id));
   }
 
   public List<Reservation> findByClientId(String clientId) {
     clients.findById(clientId);
     return repository.findByClientId(clientId);
-  }
-
-  private void validate(CreateReservationRequest request) {
-    if (request == null) {
-      throw new RequestValidationException("Reservation data is required");
-    }
-    RequestChecks.uuid(request.clientId(), "clientId");
-    if (request.items() == null || request.items().isEmpty()) {
-      throw new RequestValidationException("Reservation must contain at least one item");
-    }
-    for (var item : request.items()) {
-      if (item == null || item.quantity() == null || item.quantity() <= 0) {
-        throw new RequestValidationException("Each item must have a positive integer quantity");
-      }
-      RequestChecks.uuid(item.offerId(), "offerId");
-    }
   }
 }

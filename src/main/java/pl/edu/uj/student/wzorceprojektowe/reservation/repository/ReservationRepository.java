@@ -8,8 +8,8 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import pl.edu.uj.student.wzorceprojektowe.reservation.model.OrderItem;
-import pl.edu.uj.student.wzorceprojektowe.reservation.model.Reservation;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.OrderItem;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Reservation;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -31,11 +31,6 @@ public class ReservationRepository {
   private final JdbcTemplate jdbc;
   private final JsonMapper mapper;
 
-  /**
-   * Must be the first database operation in the creation transaction. The INSERT obtains SQLite's
-   * write lock before any offer is read, avoiding deferred read-to-write lock upgrades.
-   * The temporary empty basket is never committed; any subsequent failure rolls it back.
-   */
   public boolean insertForClient(String id, String clientId, Instant timestamp) {
     return jdbc.update(INSERT_FOR_CLIENT_TEMPLATE,
         id, timestamp.toEpochMilli(), timestamp.toEpochMilli(), clientId) == 1;

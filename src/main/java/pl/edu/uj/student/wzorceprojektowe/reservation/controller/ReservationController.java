@@ -6,13 +6,12 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
-import pl.edu.uj.student.wzorceprojektowe.offer.exception.OfferNotFoundException;
 import pl.edu.uj.student.wzorceprojektowe.reservation.model.CreateReservationRequest;
-import pl.edu.uj.student.wzorceprojektowe.reservation.model.Reservation;
 import pl.edu.uj.student.wzorceprojektowe.reservation.service.ReservationService;
+import pl.edu.uj.student.wzorceprojektowe.shared.exception.NotFoundException;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestConflictException;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
-import pl.edu.uj.student.wzorceprojektowe.shared.exception.ResourceNotFoundException;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Reservation;
 
 @RestController
 @RequestMapping("/reservations")
@@ -40,7 +39,7 @@ public class ReservationController {
     return ErrorResponse.create(e, HttpStatus.BAD_REQUEST, e.getMessage());
   }
 
-  @ExceptionHandler({ResourceNotFoundException.class, OfferNotFoundException.class})
+  @ExceptionHandler(NotFoundException.class)
   public ErrorResponse handleResourceNotFoundException(RuntimeException e) {
     return ErrorResponse.create(e, HttpStatus.NOT_FOUND, e.getMessage());
   }

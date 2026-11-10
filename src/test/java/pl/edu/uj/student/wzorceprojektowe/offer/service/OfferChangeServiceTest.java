@@ -15,8 +15,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.OptimisticLockingFailureException;
 import pl.edu.uj.student.wzorceprojektowe.offer.exception.OfferNotFoundException;
-import pl.edu.uj.student.wzorceprojektowe.offer.model.Offer;
-import pl.edu.uj.student.wzorceprojektowe.offer.model.Vendor;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Vendor;
 import pl.edu.uj.student.wzorceprojektowe.offer.repository.OfferRepository;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestConflictException;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
@@ -29,14 +29,14 @@ class OfferChangeServiceTest {
 
   @ParameterizedTest
   @ValueSource(ints = {0, -1, Integer.MIN_VALUE})
-  void invalidQuantityIsRejectedBeforeAnyDatabaseAccess(int quantity) {
+  void invalidQuantityIsRejectedWithoutAttemptingAnUpdate(int quantity) {
     assertThatThrownBy(() -> service.reserveQuantity("offer-id", quantity))
         .isInstanceOf(RequestValidationException.class);
     verifyNoInteractions(repository);
   }
 
   @Test
-  void insufficientStockIsRejectedInJavaWithoutAttemptingAnUpdate() {
+  void insufficientStockIsRejectedWithoutAttemptingAnUpdate() {
     when(repository.findById("offer-id")).thenReturn(Optional.of(offer(2)));
 
     assertThatThrownBy(() -> service.reserveQuantity("offer-id", 3))
@@ -56,7 +56,7 @@ class OfferChangeServiceTest {
   }
 
   @ParameterizedTest
-  @ValueSource(ints = {1, 3})
+  @ValueSource(ints = {1, 2, 3})
   void returnsOriginalSnapshotAndUsesVersionedUpdate(int quantity) {
     Offer original = offer(3);
     when(repository.findById("offer-id")).thenReturn(Optional.of(original));

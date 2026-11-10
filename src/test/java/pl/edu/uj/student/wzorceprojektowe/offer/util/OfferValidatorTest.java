@@ -3,7 +3,7 @@ package pl.edu.uj.student.wzorceprojektowe.offer.util;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static pl.edu.uj.student.wzorceprojektowe.offer.util.OfferValidator.validateOffer;
+
 
 import java.util.List;
 import org.junit.jupiter.api.Nested;
@@ -12,6 +12,7 @@ import pl.edu.uj.student.wzorceprojektowe.offer.exception.OfferValidationExcepti
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Vendor;
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Money;
+import pl.edu.uj.student.wzorceprojektowe.shared.util.validator.PolicyExecutor;
 import pl.edu.uj.student.wzorceprojektowe.shared.util.validator.ValidationPolicy;
 
 class OfferValidatorTest {
@@ -23,18 +24,20 @@ class OfferValidatorTest {
     return new Offer("id-1", "Koncert", VENDOR, PRICE, "Bilet na koncert", 5, 1);
   }
 
+  private final OfferValidator underTest = new OfferValidator(new PolicyExecutor<>());
+
   @Nested
   class ValidOffer {
 
     @Test
     void validOfferPassesValidation() {
-      assertDoesNotThrow(() -> validateOffer(validOffer()));
+      assertDoesNotThrow(() -> underTest.validateOffer(validOffer()));
     }
 
     @Test
     void zeroQuantityAndZeroAmountAreAllowed() {
       Offer offer = new Offer("id-1", "Darmowy", VENDOR, new Money("PLN", "0.00"), "Opis", 0, 1);
-      assertDoesNotThrow(() -> validateOffer(offer));
+      assertDoesNotThrow(() -> underTest.validateOffer(offer));
     }
   }
 
@@ -44,7 +47,7 @@ class OfferValidatorTest {
     @Test
     void nullOfferThrowsInsteadOfNpe() {
       OfferValidationException ex =
-          assertThrows(OfferValidationException.class, () -> validateOffer(null));
+          assertThrows(OfferValidationException.class, () -> underTest.validateOffer(null));
       assertTrue(ex.getMessage().contains("null"), ex.getMessage());
     }
   }
@@ -55,19 +58,19 @@ class OfferValidatorTest {
     @Test
     void nullNameThrows() {
       Offer offer = new Offer("id-1", null, VENDOR, PRICE, "Opis", 5, 1);
-      assertThrows(OfferValidationException.class, () -> validateOffer(offer));
+      assertThrows(OfferValidationException.class, () -> underTest.validateOffer(offer));
     }
 
     @Test
     void blankNameThrows() {
       Offer offer = new Offer("id-1", "", VENDOR, PRICE, "Opis", 5, 1);
-      assertThrows(OfferValidationException.class, () -> validateOffer(offer));
+      assertThrows(OfferValidationException.class, () -> underTest.validateOffer(offer));
     }
 
     @Test
     void whitespaceOnlyNameThrows() {
       Offer offer = new Offer("id-1", "   ", VENDOR, PRICE, "Opis", 5, 1);
-      assertThrows(OfferValidationException.class, () -> validateOffer(offer));
+      assertThrows(OfferValidationException.class, () -> underTest.validateOffer(offer));
     }
   }
 
@@ -77,13 +80,13 @@ class OfferValidatorTest {
     @Test
     void nullPriceThrowsInsteadOfNpe() {
       Offer offer = new Offer("id-1", "Koncert", VENDOR, null, "Opis", 5, 1);
-      assertThrows(OfferValidationException.class, () -> validateOffer(offer));
+      assertThrows(OfferValidationException.class, () -> underTest.validateOffer(offer));
     }
 
     @Test
     void negativeAmountThrowsInsteadOfNpe() {
       Offer offer = new Offer("id-1", "Koncert", VENDOR, new Money("PLN", "-5.00"), "Opis", 5, 1);
-      assertThrows(OfferValidationException.class, () -> validateOffer(offer));
+      assertThrows(OfferValidationException.class, () -> underTest.validateOffer(offer));
     }
   }
 
@@ -93,7 +96,7 @@ class OfferValidatorTest {
     @Test
     void negativeQuantityThrows() {
       Offer offer = new Offer("id-1", "Koncert", VENDOR, PRICE, "Opis", -1, 1);
-      assertThrows(OfferValidationException.class, () -> validateOffer(offer));
+      assertThrows(OfferValidationException.class, () -> underTest.validateOffer(offer));
     }
   }
 
@@ -105,14 +108,14 @@ class OfferValidatorTest {
       Offer offer = new Offer("id-1", "Koncert", null, PRICE, "Opis", 5, 1);
       List<ValidationPolicy<Offer>> extra =
           List.of(new ValidationPolicy<>(o -> o.vendor() != null, "Offer must have vendor"));
-      assertThrows(OfferValidationException.class, () -> validateOffer(offer, extra));
+      assertThrows(OfferValidationException.class, () -> underTest.validateOffer(offer, extra));
     }
 
     @Test
     void failureMessagesAreJoined() {
       Offer offer = new Offer("id-1", null, VENDOR, null, null, -1, 1);
       OfferValidationException ex =
-          assertThrows(OfferValidationException.class, () -> validateOffer(offer));
+          assertThrows(OfferValidationException.class, () -> underTest.validateOffer(offer));
       assertTrue(ex.getMessage().contains("name"), ex.getMessage());
       assertTrue(ex.getMessage().contains("price"), ex.getMessage());
       assertTrue(ex.getMessage().contains("quantity"), ex.getMessage());

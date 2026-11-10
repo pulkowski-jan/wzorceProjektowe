@@ -6,26 +6,33 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.OptimisticLockingFailureException;
 import pl.edu.uj.student.wzorceprojektowe.offer.exception.OfferNotFoundException;
-import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
-import pl.edu.uj.student.wzorceprojektowe.shared.model.Vendor;
 import pl.edu.uj.student.wzorceprojektowe.offer.repository.OfferRepository;
+import pl.edu.uj.student.wzorceprojektowe.offer.util.OfferValidator;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestConflictException;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Money;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Vendor;
+import pl.edu.uj.student.wzorceprojektowe.shared.util.validator.PolicyExecutor;
 
 @ExtendWith(MockitoExtension.class)
 class OfferChangeServiceTest {
   @Mock private OfferRepository repository;
-  @InjectMocks private OfferChangeService service;
+  private OfferChangeService service;
+
+  @BeforeEach
+  void setUp() {
+    service = new OfferChangeService(repository, new OfferValidator(new PolicyExecutor<>()));
+  }
 
   @ParameterizedTest
   @ValueSource(ints = {0, -1, Integer.MIN_VALUE})
@@ -69,14 +76,15 @@ class OfferChangeServiceTest {
   @Test
   void concurrentChangesAreNotSilentlyOverwritten() {
     when(repository.findById("offer-id")).thenReturn(Optional.of(offer(3)));
-    when(repository.update(any())).thenThrow(new OptimisticLockingFailureException("stale version"));
+    when(repository.update(any()))
+        .thenThrow(new OptimisticLockingFailureException("stale version"));
 
     assertThatThrownBy(() -> service.reserveQuantity("offer-id", 1))
         .isInstanceOf(OptimisticLockingFailureException.class);
   }
 
   private Offer offer(int quantity) {
-    return new Offer("offer-id", "Concert", new Vendor("Vendor"),
-        new Money("PLN", "10.00"), "", quantity, 7);
+    return new Offer(
+        "offer-id", "Concert", new Vendor("Vendor"), new Money("PLN", "10.00"), "", quantity, 7);
   }
 }

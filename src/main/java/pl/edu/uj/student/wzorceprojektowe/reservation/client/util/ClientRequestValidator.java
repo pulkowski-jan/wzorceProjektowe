@@ -1,15 +1,18 @@
-package pl.edu.uj.student.wzorceprojektowe.reservation.client;
+package pl.edu.uj.student.wzorceprojektowe.reservation.client.util;
 
 import java.util.List;
 import java.util.regex.Pattern;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 import pl.edu.uj.student.wzorceprojektowe.reservation.client.model.ClientRequest;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
 import pl.edu.uj.student.wzorceprojektowe.shared.util.validator.PolicyExecutor;
 import pl.edu.uj.student.wzorceprojektowe.shared.util.validator.ValidationPolicy;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor
+@Component
 public class ClientRequestValidator {
   private static final Pattern EMAIL_PATTERN = Pattern.compile("[\\w-.+]+@(?:[\\w-]+\\.)+[\\w-]+");
 
@@ -24,10 +27,12 @@ public class ClientRequestValidator {
           ValidationPolicy.regexPolicy(
               ClientRequest::email, EMAIL_PATTERN, "Malformed client email"));
 
-  public static void validateClientRequest(ClientRequest request) {
+  private final PolicyExecutor<ClientRequest> policyExecutor;
+
+  public void validateClientRequest(ClientRequest request) {
     if (request == null) {
       throw new RequestValidationException("Client data is required");
     }
-    PolicyExecutor.executePolicies(VALIDATION_POLICIES.stream(), request);
+    policyExecutor.executePolicies(VALIDATION_POLICIES.stream(), request, RequestValidationException::new);
   }
 }

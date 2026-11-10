@@ -24,10 +24,11 @@ public class ReservationService {
   private final ReservationRepository repository;
   private final OfferChangeService offerChangeService;
   private final ClientService clients;
+  private final CreateReservationRequestValidator createReservationRequestValidator;
 
   @Transactional
   public Reservation create(CreateReservationRequest request) {
-    CreateReservationRequestValidator.validateRequest(request);
+    createReservationRequestValidator.validateRequest(request);
     Map<String, Integer> quantities = new LinkedHashMap<>();
     for (var item : request.items()) {
       quantities.merge(item.offerId(), quantity(item), Integer::sum);

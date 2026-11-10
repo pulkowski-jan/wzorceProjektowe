@@ -1,11 +1,12 @@
 package pl.edu.uj.student.wzorceprojektowe.offer.service;
 
-import static pl.edu.uj.student.wzorceprojektowe.offer.util.OfferValidator.validateOffer;
+
 
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.edu.uj.student.wzorceprojektowe.offer.exception.OfferNotFoundException;
+import pl.edu.uj.student.wzorceprojektowe.offer.util.OfferValidator;
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
 import pl.edu.uj.student.wzorceprojektowe.offer.model.UpdateOfferRequest;
 import pl.edu.uj.student.wzorceprojektowe.offer.repository.OfferRepository;
@@ -16,6 +17,7 @@ import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationExce
 @RequiredArgsConstructor
 public class OfferChangeService {
   private final OfferRepository offerRepository;
+  private final OfferValidator offerValidator;
 
   public Offer updateOffer(UpdateOfferRequest request) {
     Offer existingOffer =
@@ -27,7 +29,7 @@ public class OfferChangeService {
       throw new RequestValidationException("Order vendor cannot be changed");
     }
     Offer newOffer = mergeOffers(existingOffer, request);
-    validateOffer(newOffer);
+    offerValidator.validateOffer(newOffer);
     return offerRepository.update(newOffer);
   }
 
@@ -50,7 +52,7 @@ public class OfferChangeService {
     Offer updated = new Offer(
         offer.id(), offer.name(), offer.vendor(), offer.price(), offer.description(),
         offer.quantity() - quantity, offer.version());
-    validateOffer(updated);
+    offerValidator.validateOffer(updated);
     offerRepository.update(updated);
     return offer;
   }

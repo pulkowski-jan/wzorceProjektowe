@@ -5,7 +5,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pl.edu.uj.student.wzorceprojektowe.reservation.client.ClientRequestValidator;
+import pl.edu.uj.student.wzorceprojektowe.reservation.client.util.ClientRequestValidator;
 import pl.edu.uj.student.wzorceprojektowe.reservation.client.exception.ClientNotFoundException;
 import pl.edu.uj.student.wzorceprojektowe.reservation.client.model.ClientRequest;
 import pl.edu.uj.student.wzorceprojektowe.reservation.client.repository.ClientRepository;
@@ -16,6 +16,7 @@ import pl.edu.uj.student.wzorceprojektowe.shared.model.Client;
 @RequiredArgsConstructor
 public class ClientService {
   private final ClientRepository repository;
+  private final ClientRequestValidator clientRequestValidator;
 
   public List<Client> findAll() {
     return repository.findAll();
@@ -50,7 +51,7 @@ public class ClientService {
   }
 
   private Client client(String id, ClientRequest request) {
-    ClientRequestValidator.validateClientRequest(request);
+    clientRequestValidator.validateClientRequest(request);
     return new Client(id, request.name().strip(), request.email().strip());
   }
 }

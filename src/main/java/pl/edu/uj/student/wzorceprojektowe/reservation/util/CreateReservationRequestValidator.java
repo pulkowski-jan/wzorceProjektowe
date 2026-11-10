@@ -4,16 +4,18 @@ import static pl.edu.uj.student.wzorceprojektowe.shared.util.validator.Validatio
 
 import java.util.List;
 import java.util.function.Function;
-
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 import pl.edu.uj.student.wzorceprojektowe.reservation.model.CreateReservationRequest;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
 import pl.edu.uj.student.wzorceprojektowe.shared.util.validator.PolicyExecutor;
 import pl.edu.uj.student.wzorceprojektowe.shared.util.validator.ValidationPolicy;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor
+@Component
 public class CreateReservationRequestValidator {
+  private final PolicyExecutor<CreateReservationRequest> policyExecutor;
+
   private static final List<ValidationPolicy<CreateReservationRequest>> VALIDATION_POLICIES =
       List.of(
           notBlankPolicy(CreateReservationRequest::clientId, "clientId must not be blank"),
@@ -32,11 +34,12 @@ public class CreateReservationRequestValidator {
                   item -> item == null || item.quantity() == null || item.quantity() > 0,
                   "OfferItem quantity must be positive")));
 
-  public static void validateRequest(CreateReservationRequest request) {
+  public void validateRequest(CreateReservationRequest request) {
     if (request == null) {
       throw new RequestValidationException("Reservation data is required");
     }
-    PolicyExecutor.executePolicies(VALIDATION_POLICIES.stream(), request);
+    policyExecutor.executePolicies(
+        VALIDATION_POLICIES.stream(), request, RequestValidationException::new);
   }
 
   private static String orderItemOfferId(CreateReservationRequest.Item item) {

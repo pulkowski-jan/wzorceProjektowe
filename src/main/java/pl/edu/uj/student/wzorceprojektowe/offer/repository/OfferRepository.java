@@ -10,8 +10,8 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import pl.edu.uj.student.wzorceprojektowe.offer.model.Offer;
-import pl.edu.uj.student.wzorceprojektowe.offer.model.Vendor;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Vendor;
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Money;
 
 @Repository

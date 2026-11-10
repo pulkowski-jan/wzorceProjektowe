@@ -3,8 +3,8 @@ package pl.edu.uj.student.wzorceprojektowe;
 import org.junit.jupiter.api.Test;
 import pl.edu.uj.student.wzorceprojektowe.infrastructure.MoneyJacksonComponent;
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Money;
-import pl.edu.uj.student.wzorceprojektowe.offer.model.Offer;
-import pl.edu.uj.student.wzorceprojektowe.offer.model.Vendor;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Vendor;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
 

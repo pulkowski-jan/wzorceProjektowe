@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import pl.edu.uj.student.wzorceprojektowe.offer.model.Vendor;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Vendor;
 
 @Repository
 @RequiredArgsConstructor

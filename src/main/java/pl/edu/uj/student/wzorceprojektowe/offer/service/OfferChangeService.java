@@ -6,9 +6,10 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.edu.uj.student.wzorceprojektowe.offer.exception.OfferNotFoundException;
-import pl.edu.uj.student.wzorceprojektowe.offer.model.Offer;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
 import pl.edu.uj.student.wzorceprojektowe.offer.model.UpdateOfferRequest;
 import pl.edu.uj.student.wzorceprojektowe.offer.repository.OfferRepository;
+import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestConflictException;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
 
 @Service
@@ -35,6 +36,23 @@ public class OfferChangeService {
         .deleteById(offerId)
         .orElseThrow(
             () -> new OfferNotFoundException("Offer with id %s not found".formatted(offerId)));
+  }
+
+  public Offer reserveQuantity(String offerId, int quantity) {
+    if (quantity <= 0) {
+      throw new RequestValidationException("Reserved quantity must be positive");
+    }
+    Offer offer = offerRepository.findById(offerId)
+        .orElseThrow(() -> new OfferNotFoundException("Offer not found: " + offerId));
+    if (quantity > offer.quantity()) {
+      throw new RequestConflictException("Insufficient inventory: " + offerId);
+    }
+    Offer updated = new Offer(
+        offer.id(), offer.name(), offer.vendor(), offer.price(), offer.description(),
+        offer.quantity() - quantity, offer.version());
+    validateOffer(updated);
+    offerRepository.update(updated);
+    return offer;
   }
 
   private Offer mergeOffers(Offer existingOffer, UpdateOfferRequest request) {

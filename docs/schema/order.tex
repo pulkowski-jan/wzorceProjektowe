@@ -16,6 +16,7 @@ Jeżeli typ pola nie jest podany to jest to string.
 \begin{verbatim}
 {
   "id": "UUID rezerwacji",
+  "clientId": "UUID klienta",
   "items": [
     "Zrzut stanu i cen pozycji koszyka -- lista obiektów OrderItem"
   ],
@@ -33,9 +34,13 @@ Jeżeli typ pola nie jest podany to jest to string.
 {
   "lineId": "UUID pozycji koszyka",
   "offerSnapshot": "zrzut oferty w momencie rezerwacji -- obiekt Offer",
-  "quantity": "Liczba zarezerwowanych sztuk w danej pozycji -- liczba całkowita"
+  "quantity": "Liczba zarezerwowanych sztuk -- liczba całkowita",
+  "timestamp": "Czas utworzenia pozycji"
 }
 \end{verbatim}
 \caption{Obiekt OrderItem}
 \label{schema:order-item}
 \end{figure}
+
+Oferta w \texttt{offerSnapshot} jest niezmiennym zrzutem z chwili rezerwacji,
+przed odjęciem zapasu. 

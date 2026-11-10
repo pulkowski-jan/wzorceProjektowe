@@ -9,8 +9,8 @@ import java.util.List;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import pl.edu.uj.student.wzorceprojektowe.offer.exception.OfferValidationException;
-import pl.edu.uj.student.wzorceprojektowe.offer.model.Offer;
-import pl.edu.uj.student.wzorceprojektowe.offer.model.Vendor;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Vendor;
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Money;
 import pl.edu.uj.student.wzorceprojektowe.shared.util.validator.ValidationPolicy;
 

@@ -5,6 +5,10 @@ spring:
   datasource:
     url: jdbc:sqlite:offers.db
     driver-class-name: org.sqlite.JDBC
+    hikari:
+      connection-init-sql: PRAGMA foreign_keys = ON
+      data-source-properties:
+        busy_timeout: 10000
 
   sql:
     init:
@@ -16,13 +20,3 @@ spring:
 
 server:
   port: 8081
-
-
-
-  datasource:
-    url: jdbc:sqlite:offers.db
-    driver-class-name: org.sqlite.JDBC
-
-  sql:
-    init:
-      mode: always

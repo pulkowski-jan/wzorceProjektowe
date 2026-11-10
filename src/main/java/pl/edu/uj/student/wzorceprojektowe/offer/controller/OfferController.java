@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 import pl.edu.uj.student.wzorceprojektowe.offer.exception.OfferNotFoundException;
-import pl.edu.uj.student.wzorceprojektowe.offer.model.Offer;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
 import pl.edu.uj.student.wzorceprojektowe.offer.model.UpdateOfferRequest;
 import pl.edu.uj.student.wzorceprojektowe.offer.service.OfferChangeService;
 import pl.edu.uj.student.wzorceprojektowe.offer.service.OfferCreateService;

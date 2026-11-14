@@ -1,18 +1,20 @@
 package pl.edu.uj.student.wzorceprojektowe.offer.repository;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
-import pl.edu.uj.student.wzorceprojektowe.shared.model.Vendor;
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Money;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.ParticipantMode;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Vendor;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
@@ -20,29 +22,29 @@ public class OfferRepository {
 
   private static final String SELECT_BY_ID_TEMPLATE =
       """
-      SELECT o.id, o.name, o.currency, o.amount, o.description, o.quantity, o.version,
-             v.name AS vendor_name
-      FROM offer o JOIN vendor v ON o.vendor_id = v.id
-      WHERE o.id = ?
-      """;
+          SELECT o.id, o.name, o.currency, o.amount, o.description, o.quantity, o.version,
+                 o.participant_mode, v.name AS vendor_name
+          FROM offer o JOIN vendor v ON o.vendor_id = v.id
+          WHERE o.id = ?
+          """;
   private static final String SEARCH_TEMPLATE =
       """
-      SELECT o.id, o.name, o.currency, o.amount, o.description, o.quantity, o.version,
-             v.name AS vendor_name
-      FROM offer o JOIN vendor v ON o.vendor_id = v.id
-      WHERE o.name LIKE ? AND v.name LIKE ? AND o.quantity > 0
-      """;
+          SELECT o.id, o.name, o.currency, o.amount, o.description, o.quantity, o.version,
+                 o.participant_mode, v.name AS vendor_name
+          FROM offer o JOIN vendor v ON o.vendor_id = v.id
+          WHERE o.name LIKE ? AND v.name LIKE ? AND o.quantity > 0
+          """;
   public static final String INSERT_TEMPLATE =
-      "INSERT INTO offer(id, name, vendor_id, currency, amount, description, quantity, version) VALUES (?, ?, (SELECT id FROM vendor WHERE name = ?), ?, ?, ?, ?, 1)";
+      "INSERT INTO offer(id, name, vendor_id, currency, amount, description, quantity, version, participant_mode) VALUES (?, ?, (SELECT id FROM vendor WHERE name = ?), ?, ?, ?, ?, 1, ?)";
   public static final String UPDATE_TEMPLATE =
-      "UPDATE offer SET name = ?, description = ?, amount = ?, currency = ?, quantity = ?, version = ? WHERE id = ? AND version = ?";
+      "UPDATE offer SET name = ?, description = ?, amount = ?, currency = ?, quantity = ?, participant_mode = ?, version = ? WHERE id = ? AND version = ?";
   public static final String DELETE_TEMPLATE =
       """
-      DELETE FROM offer
-      WHERE id = ?
-      RETURNING id, name, currency, amount, description, quantity, version,
-             (SELECT v.name FROM vendor v WHERE v.id = offer.vendor_id) AS vendor_name
-      """;
+          DELETE FROM offer
+          WHERE id = ?
+          RETURNING id, name, currency, amount, description, quantity, version, participant_mode,
+                 (SELECT v.name FROM vendor v WHERE v.id = offer.vendor_id) AS vendor_name
+          """;
 
   private final JdbcTemplate jdbc;
 
@@ -68,7 +70,8 @@ public class OfferRepository {
         offer.price().currency(),
         offer.price().getAmountAsString(),
         offer.description(),
-        offer.quantity());
+        offer.quantity(),
+        offer.participantMode().name());
     return new Offer(
         offerId,
         offer.name(),
@@ -76,7 +79,8 @@ public class OfferRepository {
         offer.price(),
         offer.description(),
         offer.quantity(),
-        1);
+        1,
+        offer.participantMode());
   }
 
   public Offer update(Offer offer) {
@@ -87,12 +91,13 @@ public class OfferRepository {
         offer.price().getAmountAsString(),
         offer.price().currency(),
         offer.quantity(),
+        offer.participantMode().name(),
         offer.version() + 1,
         offer.id(),
         offer.version());
     if (affectedRows != 1) {
       throw new OptimisticLockingFailureException(
-              "Concurrent offer change or was deletion detected for offer: " + offer.id());
+          "Concurrent offer change or was deletion detected for offer: " + offer.id());
     }
     return new Offer(
         offer.id(),
@@ -101,7 +106,8 @@ public class OfferRepository {
         offer.price(),
         offer.description(),
         offer.quantity(),
-        offer.version() + 1);
+        offer.version() + 1,
+        offer.participantMode());
   }
 
   public Optional<Offer> deleteById(String offerId) {
@@ -120,6 +126,7 @@ public class OfferRepository {
         new Money(rs.getString("currency"), rs.getString("amount")),
         rs.getString("description"),
         rs.getInt("quantity"),
-        rs.getInt("version"));
+        rs.getInt("version"),
+        ParticipantMode.valueOf(rs.getString("participant_mode")));
   }
 }

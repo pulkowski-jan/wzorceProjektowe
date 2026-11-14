@@ -14,8 +14,19 @@ Jeżeli typ pola nie jest podany to jest to string.
   },
   "description": "Opis oferty",
   "quantity": "Liczba możliwych sprzedaży oferty -- liczba całkowita",
-  "version": "Wersja oferty -- liczba całkowita"
+  "version": "Wersja oferty -- liczba całkowita",
+  "participantMode": "NONE", "NAMED" lub "GROUP" -- domyślnie "NONE"
 }
 \end{verbatim}
 \caption{Obiekt Offer}
 \end{figure}
+
+Pole \texttt{participantMode} określa, jakich danych uczestników wymaga rezerwacja oferty:
+\begin{itemize}
+  \item \texttt{NONE} -- bilet nieimienny, dane uczestników nie są przyjmowane,
+  \item \texttt{NAMED} -- bilet imienny, każda zarezerwowana sztuka wymaga uczestnika
+    z polem \texttt{name},
+  \item \texttt{GROUP} -- oferta grupowa, wystarczą dane klienta, dane uczestników nie są przyjmowane.
+\end{itemize}
+Brak pola oznacza \texttt{NONE}.
+Tryb ustawia się przy tworzeniu oferty i nie można go później zmienić.

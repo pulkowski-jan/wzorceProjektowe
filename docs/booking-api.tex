@@ -98,7 +98,11 @@ Rezerwacja przechowuje UUID klienta.
   "items": [
     {
       "offerId": "22222222-2222-4222-8222-222222222222",
-      "quantity": 2
+      "quantity": 2,
+      "participants": [
+        {"name": "Jan Kowalski"},
+        {"name": "Anna Nowak"}
+      ]
     }
   ]
 }
@@ -109,9 +113,24 @@ Rezerwacja przechowuje UUID klienta.
 
 Podane UUID muszą wskazywać istniejącego klienta i oferty. Serwer nadaje UUID
 rezerwacji i pozycji, znaczniki czasu oraz pobiera zrzuty ofert z katalogu.
-Przekazane dodatkowo ceny lub zrzuty nie nadpisują wartości katalogowych.
+Przekazane dodatkowo ceny, zrzuty lub status nie nadpisują wartości katalogowych; nowa rezerwacja zawsze ma status \texttt{RESERVED}.
 
 Pole \texttt{quantity} jest dodatnią liczbą całkowitą, nie może przekroczyć quantity oferty w katalogu.
+
+\paragraph{Uczestnicy.} Pole \texttt{participants} pozycji jest nieobowiązkowe.
+Reguła zależy od \texttt{participantMode} oferty:
+\begin{itemize}
+  \item \texttt{NAMED} -- liczba uczestników musi być równa \texttt{quantity} i każdy musi mieć niepuste pole \texttt{name} (\hyperref[schema:participant]{obiekt Participant}); w przeciwnym przypadku zwracany jest błąd 400.
+  \item \texttt{NONE} i \texttt{GROUP} -- uczestnicy nie są przyjmowani; przekazanie ich kończy się błędem 400.
+\end{itemize}
+Naruszenie reguły cofa całą rezerwację razem z odjętym zapasem.
+
+Status rezerwacji ustawia wyłącznie serwer: nowa rezerwacja ma zawsze status \texttt{RESERVED}, a status przekazany w żądaniu jest ignorowany, tak jak \texttt{id} czy znaczniki czasu.
+Dozwolone przejścia to
+\texttt{RESERVED}~$\rightarrow$~\texttt{PAID} oraz
+\texttt{RESERVED}~$\rightarrow$~\texttt{CANCELED}.
+Statusy \texttt{PAID} i \texttt{CANCELED} są końcowe.
+Każda zmiana statusu zwiększa wersję rezerwacji i aktualizuje \texttt{lastModifiedTimestamp}.
 
 \subsubsection{Kody odpowiedzi API rezerwacji}
 
@@ -124,7 +143,7 @@ Pole \texttt{quantity} jest dodatnią liczbą całkowitą, nie może przekroczy�
     \hline
     Wszystkie & 200 OK & Utworzona lub odczytana rezerwacja, albo lista rezerwacji klienta. \\
     \hline
-    \texttt{POST /reservations} & 400 Bad Request & Brak pozycji, błędny UUID, niepoprawna ilość lub przekroczenie zakresu sumy ilości. \\
+    \texttt{POST /reservations} & 400 Bad Request & Brak pozycji, błędny UUID, niepoprawna ilość, przekroczenie zakresu sumy ilości lub naruszenie reguły uczestników (zła liczba, pusta lub zbyt długa nazwa, uczestnicy przy ofercie \texttt{NONE} lub \texttt{GROUP}).\\
     \hline
     \texttt{GET /reservations} & 400 Bad Request & Brak parametru \texttt{clientId}. \\
     \hline
@@ -155,7 +174,7 @@ Pole \texttt{quantity} jest dodatnią liczbą całkowitą, nie może przekroczy�
 \subsection{Konfiguracja i ograniczenia}
 
 
-\paragrpah{Zakres}: statusy, dane i reguły uczestników, płatności,
+\paragraph{Zakres}: statusy, edycja uczestników po utworzeniu rezerwacji, płatności,
     anulowanie i zwalnianie zapasu, wygasanie, konkretne miejsca oraz oferty
     zależne nie są zaimplementowane. Rezerwacje zajmują zapas bezterminowo,
     ponowiony \texttt{POST} tworzy kolejny koszyk.

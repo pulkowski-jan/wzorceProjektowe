@@ -3,7 +3,8 @@
 REST API do rezerwowania biletów na wydarzenia (koncerty spektakle itp.)
 
 # TODO
-## Baza 
+
+## Baza
 
 - [x] Inicjalizacja bazy danych i środowiska
 
@@ -20,13 +21,13 @@ REST API do rezerwowania biletów na wydarzenia (koncerty spektakle itp.)
 ## Rezerwacje i Reguły Biznesowe
 
 - [x] Zapis i odczyt koszyka rezerwacji
-      
+
       Zaimplementować tworzenie rezerwacji zawierającej oferty w momencie zakupu
       (ofertę zapakować we wrapper z timestampem i ilością sztuk
       i dump listy tych itemów do bazy).
-      
 
-- [ ] Weryfikacja reguł uczestników
+
+- [X] Weryfikacja reguł uczestników
 
       Umożliwić zapis statusu rezerwacji     (zarezerwowane/opłacone/anulowane) i danych uczestników 
       Stworzyć mechanizm sprawdzający poprawność danych uczestników w zależności od typu oferty 

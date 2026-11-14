@@ -21,7 +21,8 @@ CREATE TABLE offer
     amount      TEXT    NOT NULL,
     description TEXT    NOT NULL,
     quantity    INTEGER NOT NULL CHECK (quantity >= 0),
-    version     INTEGER NOT NULL CHECK (version >= 0 )
+    version     INTEGER NOT NULL CHECK (version >= 0),
+    participant_mode TEXT NOT NULL DEFAULT NONE CHECK (participant_mode IN ('NONE', 'NAMED', 'GROUP'))
 );
 
 CREATE TABLE client
@@ -37,6 +38,7 @@ CREATE TABLE reservation
     version                 INTEGER NOT NULL CHECK (version >= 0 ),
     client_id               TEXT    NOT NULL REFERENCES client (id),
     offer_items_data        TEXT    NOT NULL, -- JSON dump
+    status                  TEXT    NOT NULL CHECK (status IN ('RESERVED', 'PAID', 'CANCELED')),
     create_timestamp        INTEGER NOT NULL,
     last_modified_timestamp INTEGER NOT NULL
 );

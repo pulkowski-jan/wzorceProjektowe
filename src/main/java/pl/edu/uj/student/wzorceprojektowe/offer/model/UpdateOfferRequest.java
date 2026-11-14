@@ -1,6 +1,7 @@
 package pl.edu.uj.student.wzorceprojektowe.offer.model;
 
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Money;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.ParticipantMode;
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Vendor;
 
 /**
@@ -9,4 +10,16 @@ import pl.edu.uj.student.wzorceprojektowe.shared.model.Vendor;
  * distinguished from an explicit {@code 0}.
  */
 public record UpdateOfferRequest(
-        String id, String name, Vendor vendor, Money price, String description, Integer quantity) {}
+    String id, String name, Vendor vendor, Money price, String description, Integer quantity,
+    ParticipantMode participantMode) {
+
+  public UpdateOfferRequest(
+      String id,
+      String name,
+      Vendor vendor,
+      Money price,
+      String description,
+      Integer quantity) {
+    this(id, name, vendor, price, description, quantity, null);
+  }
+}

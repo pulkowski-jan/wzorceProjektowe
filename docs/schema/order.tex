@@ -20,6 +20,7 @@ Jeżeli typ pola nie jest podany to jest to string.
   "items": [
     "Zrzut stanu i cen pozycji koszyka -- lista obiektów OrderItem"
   ],
+  "status": "Status rezerwacji",
   "createTimestamp": "Znacznik czasu utworzenia",
   "lastModifiedTimestamp": "Znacznik ostatniej modyfikacji"
 }
@@ -35,7 +36,10 @@ Jeżeli typ pola nie jest podany to jest to string.
   "lineId": "UUID pozycji koszyka",
   "offerSnapshot": "zrzut oferty w momencie rezerwacji -- obiekt Offer",
   "quantity": "Liczba zarezerwowanych sztuk -- liczba całkowita",
-  "timestamp": "Czas utworzenia pozycji"
+  "timestamp": "Czas utworzenia pozycji",
+  "participants": [
+    "Uczestnicy" -- lista obiektów Participant, pusta gdy tryb oferty tego nie wymaga
+  ]
 }
 \end{verbatim}
 \caption{Obiekt OrderItem}
@@ -44,3 +48,16 @@ Jeżeli typ pola nie jest podany to jest to string.
 
 Oferta w \texttt{offerSnapshot} jest niezmiennym zrzutem z chwili rezerwacji,
 przed odjęciem zapasu. 
+
+\begin{figure}[H]
+\begin{verbatim}
+{
+  "name": "Imię i nazwisko uczestnika"
+}
+\end{verbatim}
+\caption{Obiekt Participant}
+\label{schema:participant}
+\end{figure}
+
+Obiekt Participant ma jedno pole, \texttt{name}.
+Po usunięciu otaczających białych znaków musi ono mieć od 1 do 255 znaków.

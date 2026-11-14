@@ -1,17 +1,17 @@
 package pl.edu.uj.student.wzorceprojektowe.offer.service;
 
 
-
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.edu.uj.student.wzorceprojektowe.offer.exception.OfferNotFoundException;
-import pl.edu.uj.student.wzorceprojektowe.offer.util.OfferValidator;
-import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
 import pl.edu.uj.student.wzorceprojektowe.offer.model.UpdateOfferRequest;
 import pl.edu.uj.student.wzorceprojektowe.offer.repository.OfferRepository;
+import pl.edu.uj.student.wzorceprojektowe.offer.util.OfferValidator;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestConflictException;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.Offer;
+
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +27,9 @@ public class OfferChangeService {
                 new OfferNotFoundException("Offer with id %s not found".formatted(request.id())));
     if (request.vendor() != null && !request.vendor().equals(existingOffer.vendor())) {
       throw new RequestValidationException("Order vendor cannot be changed");
+    }
+    if (request.participantMode() != null && request.participantMode() != existingOffer.participantMode()) {
+      throw new RequestValidationException("Participant mode cannot be changed");
     }
     Offer newOffer = mergeOffers(existingOffer, request);
     offerValidator.validateOffer(newOffer);
@@ -51,7 +54,7 @@ public class OfferChangeService {
     }
     Offer updated = new Offer(
         offer.id(), offer.name(), offer.vendor(), offer.price(), offer.description(),
-        offer.quantity() - quantity, offer.version());
+        offer.quantity() - quantity, offer.version(), offer.participantMode());
     offerValidator.validateOffer(updated);
     offerRepository.update(updated);
     return offer;
@@ -65,6 +68,7 @@ public class OfferChangeService {
         Objects.requireNonNullElse(request.price(), existingOffer.price()),
         Objects.requireNonNullElse(request.description(), existingOffer.description()),
         request.quantity() != null ? request.quantity() : existingOffer.quantity(),
-        existingOffer.version());
+        existingOffer.version(),
+        existingOffer.participantMode());
   }
 }

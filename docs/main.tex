@@ -12,6 +12,7 @@
 \usepackage{lmodern}
 \usepackage[scale=0.85]{FiraMono}
 \usepackage[scaled=0.95]{helvet}
+\usepackage{makecell}
 
 \definecolor{docblue}{RGB}{0, 102, 204}
 
@@ -83,6 +84,8 @@ Wzorowy system biletowy to monolityczny REST service.
     \hline
     version & INTEGER & NOT NULL, $\ge 0$ & Wersja oferty & \texttt{version} \\
     \hline
+    participant\_mode & TEXT & \makecell[tl]{IN (\texttt{NONE, NAMED, GROUP}), \\ DEFAULT \texttt{NONE}} & Tryb danych uczestników & \texttt{participantMode} \\
+    \hline
   \end{tabularx}
   \caption{Struktura tabeli \texttt{offer}}
   \label{tab:schema-offer}
@@ -122,11 +125,11 @@ Metoda: \texttt{GET}. Parametry: \texttt{vendor}, \texttt{name}. Brak ciała zap
 
 \subsubsection{Endpoint \texttt{/create}}
 
-Metoda: \texttt{POST}. Brak parametrów. Ciało zapytania: \hyperref[schema:offer]{obiekt Offer}. Tworzy zadaną ofertę. Pole \texttt{id} jest nieobowiązkowe i ignorowane; pole \texttt{description} może być pustym stringiem. Zwraca utworzoną ofertę.
+Metoda: \texttt{POST}. Brak parametrów. Ciało zapytania: \hyperref[schema:offer]{obiekt Offer}. Tworzy zadaną ofertę. Pole \texttt{id} jest nieobowiązkowe i ignorowane; pole \texttt{description} może być pustym stringiem; pole \texttt{participantMode} jest nieobowiązkowe i domyślnie ma wartość \texttt{NONE}. Zwraca utworzoną ofertę.
 
 \subsubsection{Endpoint \texttt{/update}}
 
-Metoda: \texttt{POST}. Brak parametrów. Ciało zapytania: \hyperref[schema:offer]{obiekt Offer}. Aktualizuje zadaną ofertę. Wszystkie pola poza \texttt{id} są nieobowiązkowe; pole \texttt{vendor} nie musi zostać wypełnione, jeżeli podano pole \texttt{vendor} to musi się ono zgadzać ze stanem dotychczasowym -- nie można go zmieniać. Oferta zostanie zaktualizowana o wszystkie pozostałe pola wypełnione w zapytaniu. Zwraca zaktualizowaną ofertę.
+Metoda: \texttt{POST}. Brak parametrów. Ciało zapytania: \hyperref[schema:offer]{obiekt Offer}. Aktualizuje zadaną ofertę. Wszystkie pola poza \texttt{id} są nieobowiązkowe; pole \texttt{vendor} nie musi zostać wypełnione, jeżeli podano pole \texttt{vendor} to musi się ono zgadzać ze stanem dotychczasowym -- nie można go zmieniać. Oferta zostanie zaktualizowana o wszystkie pozostałe pola wypełnione w zapytaniu. Pole \texttt{participantMode}, tak jak \texttt{vendor}, może zostać podane tylko z dotychczasową wartością -- próba zmiany trybu kończy się błędem 400. Zwraca zaktualizowaną ofertę.
 
 \subsubsection{Kody odpowiedzi katalogu ofert}
 
@@ -151,7 +154,7 @@ Metoda: \texttt{POST}. Brak parametrów. Ciało zapytania: \hyperref[schema:offe
     \hline
     \texttt{POST /offer/update} & 200 OK & Oferta zaktualizowana \\
     & 404 Not Found & Oferta nie istnieje \\
-    & 400 Bad Request & Błąd walidacji lub próba zmiany sprzedawcy \\
+    & 400 Bad Request & Błąd walidacji lub próba zmiany sprzedawcy albo trybu rejestracji uczestników \\
     \hline
   \end{tabularx}
   \caption{Kody odpowiedzi endpointów katalogu ofert (\texttt{/offer})}
@@ -239,11 +242,13 @@ API sprzedawców jest częścią modułu katalogu ofert. Ścieżka bazowa to \te
     \hline
     id & TEXT & PRIMARY KEY & UUID rezerwacji & \texttt{id} \\
     \hline
-    version & INTEGER & NOT NULL & Licznik modyfikacji & Niedostępne przez api \\
+    version & INTEGER & NOT NULL, $\geq 0$ & Licznik modyfikacji & Niedostępne przez api \\
     \hline
     client\_id & TEXT & NOT NULL, FK & Klucz zewnętrzny do tabeli \texttt{client} & \texttt{clientId} \\
     \hline
     offer\_items\_data & TEXT & NOT NULL & Zrzut JSON \hyperref[schema:order-item]{obiektów OrderItem} & \texttt{items} \\
+    \hline
+    status & TEXT & \makecell[tl]{IN (\texttt{RESERVED}, \\ \texttt{PAID, CANCELED})} & Status rezerwacji & \texttt{status} \\
     \hline
     create\_timestamp & INTEGER & NOT NULL & Znacznik czasu utworzenia & \texttt{createTimestamp} \\
     \hline

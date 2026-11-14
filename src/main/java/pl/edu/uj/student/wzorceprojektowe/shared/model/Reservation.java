@@ -7,6 +7,7 @@ public record Reservation(
     String id,
     String clientId,
     List<OrderItem> items,
+    ReservationStatus status,
     Instant createTimestamp,
     Instant lastModifiedTimestamp) {
   public Reservation {

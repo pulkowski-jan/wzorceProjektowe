@@ -169,12 +169,16 @@ Każda zmiana statusu zwiększa wersję rezerwacji i aktualizuje \texttt{lastMod
     zrzutami ofert. Późniejsze zmiany lub usunięcie oferty nie zmieniają rezerwacji.
     \texttt{offerSnapshot.quantity} to zapas przed zakupem, a ilość pozycji
     oznacza liczbę rezerwowanych sztuk.
+  \item \textbf{Zwrot zapasu}: przejście rezerwacji do \texttt{CANCELLED} oddaje zarezerwowane sztuki ofertom w tej samej transakcji co zmiana statusu.
+    Zwrot to pojedyncze atomowe zwiększenie ilości, które zwiększa wersję oferty i nie koliduje z jednoczesnymi rezerwacjami.
+    Ponieważ warunkowa zmiana statusu udaje się tylko raz, zapas wraca co najwyżej raz, także przy równoległych lub ponawianych anulowaniach.
+    Jeżeli oferta została w międzyczasie usunięta, nie ma dokąd zwrócić zapasu i anulowanie przebiega bez błędu.
+    Płatność (\texttt{PAID}) zapasu nie zmienia.
 \end{itemize}
 
 \subsection{Konfiguracja i ograniczenia}
 
 
 \paragraph{Zakres}: statusy, edycja uczestników po utworzeniu rezerwacji, płatności,
-    anulowanie i zwalnianie zapasu, wygasanie, konkretne miejsca oraz oferty
-    zależne nie są zaimplementowane. Rezerwacje zajmują zapas bezterminowo,
-    ponowiony \texttt{POST} tworzy kolejny koszyk.
+    wygasanie, konkretne miejsca oraz oferty
+    zależne nie są zaimplementowane. Ponowiony \texttt{POST} tworzy kolejny koszyk.

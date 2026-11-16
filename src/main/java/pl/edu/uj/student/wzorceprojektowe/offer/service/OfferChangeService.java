@@ -60,6 +60,13 @@ public class OfferChangeService {
     return offer;
   }
 
+  public boolean releaseQuantity(String offerId, int quantity) {
+    if (quantity <= 0) {
+      throw new RequestValidationException("Released quantity must be positive");
+    }
+    return offerRepository.addQuantity(offerId, quantity);
+  }
+
   private Offer mergeOffers(Offer existingOffer, UpdateOfferRequest request) {
     return new Offer(
         existingOffer.id(),

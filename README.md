@@ -33,7 +33,7 @@ REST API do rezerwowania biletów na wydarzenia (koncerty spektakle itp.)
       Stworzyć mechanizm sprawdzający poprawność danych uczestników w zależności od typu oferty 
       (dla grupy (wtedy wystarczą dane klienta), imienne (dane osoby per item), nieimienny (dane niewymagane))
 
-- [ ] Obsługa współbieżności i inventory
+- [X] Obsługa współbieżności i inventory
 
       Zabezpieczyć proces rezerwacji przed jednoczesnym zakupem tego samego miejsca przez wielu użytkowników i ponad inventory.
       Rezerwacja już atomowo odejmuje dostępną ilość i chroni przed przekroczeniem inventory.

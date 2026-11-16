@@ -77,6 +77,19 @@ public class ReservationService {
       throw new RequestConflictException(
           "Reservation status cannot be changed from %s to %s".formatted(current.status(), target));
     }
+    Reservation updated = findById(id);
+    if (target == ReservationStatus.CANCELED) {
+      releaseStock(updated);
+    }
+    return updated;
+  }
+
+  private void releaseStock(Reservation reservation) {
+    Map<String, Integer> quantities = new LinkedHashMap<>();
+    for (OrderItem item : reservation.items()) {
+      quantities.merge(item.offerSnapshot().id(), item.quantity(), Integer::sum);
+    }
+    quantities.forEach(offerChangeService::releaseQuantity);
     return findById(id);
   }
 

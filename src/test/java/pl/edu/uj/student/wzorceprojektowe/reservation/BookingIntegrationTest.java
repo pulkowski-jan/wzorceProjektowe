@@ -762,6 +762,155 @@ class BookingIntegrationTest {
         .isEqualTo("NONE");
   }
 
+  private int offerVersion(String offerId) throws Exception {
+    return response(get("/offer/{id}", offerId), null, 200).get("version").asInt();
+  }
+
+  private String reserve(String clientId, String items) throws Exception {
+    return response(post("/reservations"), basket(clientId, items), 200).get("id").asString();
+  }
+
+  @Test
+  void cancellingGivesEveryLinesTicketsBackToItsOffer() throws Exception {
+    String a = createOffer(5);
+    String b = createOffer(3);
+    String id = reserve(createClient(), item(a, 2) + "," + item(a, 1) + "," + item(b, 1));
+    assertThat(stock(a)).isEqualTo(2);
+    assertThat(stock(b)).isEqualTo(2);
+    int versionA = offerVersion(a);
+
+    service.changeStatus(id, ReservationStatus.CANCELED);
+
+    assertThat(stock(a)).isEqualTo(5);
+    assertThat(stock(b)).isEqualTo(3);
+    assertThat(offerVersion(a)).isEqualTo(versionA + 1);
+  }
+
+  @Test
+  void payingKeepsTheTicketsReserved() throws Exception {
+    String offer = createOffer(5);
+    String id = reserve(createClient(), item(offer, 2));
+
+    service.changeStatus(id, ReservationStatus.PAID);
+
+    assertThat(stock(offer)).isEqualTo(3);
+  }
+
+  @Test
+  void cancellingTwiceGivesTicketsBackOnlyOnce() throws Exception {
+    String offer = createOffer(5);
+    String id = reserve(createClient(), item(offer, 2));
+    service.changeStatus(id, ReservationStatus.CANCELED);
+
+    assertThatThrownBy(() -> service.changeStatus(id, ReservationStatus.CANCELED))
+        .isInstanceOf(RequestConflictException.class);
+
+    assertThat(stock(offer)).isEqualTo(5);
+  }
+
+  @Test
+  void racingCancellationsGiveTicketsBackExactlyOnce() throws Exception {
+    String offer = createOffer(5);
+    String id = reserve(createClient(), item(offer, 2));
+    CountDownLatch start = new CountDownLatch(1);
+    long succeeded = 0;
+    try (var executor = Executors.newFixedThreadPool(4)) {
+      List<Future<Boolean>> results = new ArrayList<>();
+      for (int i = 0; i < 4; i++) {
+        results.add(
+            executor.submit(() -> {
+              start.await(10, TimeUnit.SECONDS);
+              try {
+                service.changeStatus(id, ReservationStatus.CANCELED);
+                return true;
+              } catch (RequestConflictException e) {
+                return false;
+              }
+            }));
+      }
+      start.countDown();
+      for (Future<Boolean> result : results) {
+        if (result.get(20, TimeUnit.SECONDS)) {
+          succeeded++;
+        }
+      }
+    } finally {
+      start.countDown();
+    }
+
+    assertThat(succeeded).isEqualTo(1);
+    assertThat(stock(offer)).isEqualTo(5);
+  }
+
+  @Test
+  void cancelledTicketsCanBeReservedAgainEvenAfterSellingOut() throws Exception {
+    String offer = createOffer(2);
+    String first = reserve(createClient(), item(offer, 2));
+    response(post("/reservations"), basket(createClient(), item(offer, 1)), 409);
+
+    service.changeStatus(first, ReservationStatus.CANCELED);
+
+    reserve(createClient(), item(offer, 2));
+    assertThat(stock(offer)).isZero();
+  }
+
+  @Test
+  void cancellingStillWorksWhenTheOfferWasDeleted() throws Exception {
+    String offer = createOffer(5);
+    String id = reserve(createClient(), item(offer, 2));
+    response(delete("/offer/{id}", offer), null, 200);
+
+    Reservation cancelled = service.changeStatus(id, ReservationStatus.CANCELED);
+
+    assertThat(cancelled.status()).isEqualTo(ReservationStatus.CANCELED);
+    assertThat(count("offer")).isZero();
+  }
+
+  @Test
+  void cancellationsAndNewReservationsNeverOversellTheOffer() throws Exception {
+    String offer = createOffer(4);
+    String client = createClient();
+    List<String> held = new ArrayList<>();
+    for (int i = 0; i < 4; i++) {
+      held.add(reserve(client, item(offer, 1)));
+    }
+    CountDownLatch start = new CountDownLatch(1);
+    try (var executor = Executors.newFixedThreadPool(8)) {
+      List<Future<Boolean>> results = new ArrayList<>();
+      for (String id : held) {
+        results.add(
+            executor.submit(() -> {
+              start.await(10, TimeUnit.SECONDS);
+              service.changeStatus(id, ReservationStatus.CANCELED);
+              return true;
+            }));
+      }
+      for (int i = 0; i < 4; i++) {
+        results.add(
+            executor.submit(() -> {
+              start.await(10, TimeUnit.SECONDS);
+              try {
+                reserve(client, item(offer, 1));
+                return true;
+              } catch (AssertionError | Exception e) {
+                return false;
+              }
+            }));
+      }
+      start.countDown();
+      for (Future<Boolean> result : results) {
+        result.get(30, TimeUnit.SECONDS);
+      }
+    } finally {
+      start.countDown();
+    }
+
+    long active =
+        jdbc.queryForObject(
+            "SELECT COUNT(*) FROM reservation WHERE status = 'RESERVED'", Long.class);
+    assertThat(stock(offer) + active).isEqualTo(4);
+  }
+
   private void assertConcurrentStock(int inventory, int callers) throws Exception {
     String client = createClient();
     String offer = createOffer(inventory);

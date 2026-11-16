@@ -36,6 +36,8 @@ public class OfferRepository {
           """;
   public static final String INSERT_TEMPLATE =
       "INSERT INTO offer(id, name, vendor_id, currency, amount, description, quantity, version, participant_mode) VALUES (?, ?, (SELECT id FROM vendor WHERE name = ?), ?, ?, ?, ?, 1, ?)";
+  public static final String ADD_QUANTITY_TEMPLATE =
+      "UPDATE offer SET quantity = quantity + ?, version = version + 1 WHERE id = ?";
   public static final String UPDATE_TEMPLATE =
       "UPDATE offer SET name = ?, description = ?, amount = ?, currency = ?, quantity = ?, participant_mode = ?, version = ? WHERE id = ? AND version = ?";
   public static final String DELETE_TEMPLATE =
@@ -81,6 +83,10 @@ public class OfferRepository {
         offer.quantity(),
         1,
         offer.participantMode());
+  }
+
+  public boolean addQuantity(String id, int amount) {
+    return jdbc.update(ADD_QUANTITY_TEMPLATE, amount, id) == 1;
   }
 
   public Offer update(Offer offer) {

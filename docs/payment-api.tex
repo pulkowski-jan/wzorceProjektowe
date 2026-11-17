@@ -53,11 +53,9 @@ jako \texttt{PAID}. Odpowiedź zawiera:
   "statusMessage": ""
 }
 \end{verbatim}
-Dla udanej płatności komunikat jest pustym tekstem, nie wartością
-\texttt{null}.
 Status \texttt{DENIED} oznacza odmowę przyjęcia płatności.
 Status \texttt{FAILED} oznacza błąd żądania lub przetwarzania;
-pole \texttt{statusMessage} opisuje przyczynę.
+pole \texttt{statusMessage} opisuje przyczynę, dla udanej płatności jest pustym tekstem.
 
 \begin{center}
 \begin{tabularx}{\textwidth}{lX}
@@ -76,8 +74,8 @@ Kod HTTP & Znaczenie dla klienta \\
 
 Odmowa lub odrzucenie przed realizacją nie rejestruje wpłaty
  i nie oznacza rezerwacji jako opłaconej. Jeśli po przyjęciu płatności
-nie można zakończyć rejestracji, system wycofuje lokalny zapis wpłaty
- i podejmuje próbę anulowania operacji. Błąd nadal oznacza
+nie można jej zarejestrować, system wycofuje lokalny zapis wpłaty
+ i podejmuje próbę anulowania operacji. Błąd anulowania oznacza
 niezakończony proces płatności, a nie opłaconą rezerwację.
 
 \subsubsection{Zakres wersji demonstracyjnej}

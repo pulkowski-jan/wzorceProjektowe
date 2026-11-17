@@ -1,14 +1,16 @@
-\subsubsection{Endpoint płatności}
+\subsubsection{Opłacenie rezerwacji}
 \label{api:payment}
 
-\texttt{POST /payment/pay} przyjmuje obiekt \hyperref[schema:payment]{Payment}
- w ciele JSON i zwraca obiekt \texttt{PaymentResult}.
-Przykład płatności BLIK dla istniejącej rezerwacji o saldzie 10,00 PLN:
+Klient opłaca istniejącą rezerwację przez \texttt{POST /payment/pay}.
+Dostępne metody to karta, gotówka i BLIK. System nadaje płatności
+unikalny identyfikator i czas rejestracji. Wartości tych pól przesłane
+przez klienta są ignorowane; nie trzeba ich podawać w żądaniu.
+
+Przykład dla rezerwacji o wartości 30,00 PLN:
 \begin{verbatim}
 {
-  "id": "payment-example-1",
   "reservationId": "existing-reservation-id",
-  "amount": "10.00",
+  "amount": "30.00",
   "currency": "PLN",
   "paymentDetails": {
     "paymentMethod": "BLIK",
@@ -16,118 +18,74 @@ Przykład płatności BLIK dla istniejącej rezerwacji o saldzie 10,00 PLN:
       "blikCode": "111111",
       "email": "buyer@example.org"
     }
-  },
-  "paymentTimestamp": "2026-01-01T00:00:00.123Z"
+  }
 }
 \end{verbatim}
-Identyfikator rezerwacji w przykładzie należy zastąpić rzeczywistym.
-Kontroler nie generuje identyfikatora płatności ani znacznika czasu;
-przekazuje wartości dostarczone przez klienta do dalszego przetwarzania.
+Identyfikator należy zastąpić identyfikatorem rzeczywistej rezerwacji.
 
-Odpowiedź po poprawnym zakończeniu:
+\subsubsection{Zasady rozliczenia}
+
+Kwota musi odpowiadać pełnej wartości rezerwacji. Wartość każdej
+pozycji to cena jednostkowa z chwili rezerwacji pomnożona przez liczbę
+sztuk; kwota do zapłaty jest sumą wartości wszystkich pozycji.
+Przykładowo trzy bilety po 10,00 PLN wymagają płatności 30,00 PLN.
+Wpłata mniejsza lub większa od tej wartości jest odrzucana.
+
+Wszystkie pozycje muszą mieć tę samą walutę, zgodną z walutą wpłaty.
+Nie można opłacić pustej rezerwacji ani rezerwacji wielowalutowej.
+Kwoty są zaokrąglane do dwóch miejsc dziesiętnych, z zaokrągleniem
+połówek w górę. Płatności częściowe nie są obsługiwane.
+
+Należy wskazać jedną metodę i wyłącznie odpowiadające jej szczegóły.
+Dla BLIK wymagany jest sześciocyfrowy kod i adres e-mail.
+Gotówkę obsługuje agent sprzedawcy; rezerwacja musi dotyczyć jednego
+sprzedawcy, a kod agenta zaczynać się od jego nazwy.
+Płatność kartą wymaga numeru, kodu bezpieczeństwa, miesiąca i roku
+ważności oraz nazwy właściciela; adres rozliczeniowy jest opcjonalny.
+
+\subsubsection{Wynik płatności}
+
+Po poprawnym opłaceniu system rejestruje wpłatę i oznacza rezerwację
+jako \texttt{PAID}. Odpowiedź zawiera:
 \begin{verbatim}
 {
   "status": "SUCCESSFUL",
   "statusMessage": null
 }
 \end{verbatim}
-\begin{itemize}
-  \item \texttt{SUCCESSFUL}: strategia zaakceptowała płatność, zapisano ją
-    i zmieniono status rezerwacji na \texttt{PAID}.
-  \item \texttt{DENIED}: strategia odmówiła płatności, np. z powodu kodu BLIK
-    lub nieuprawnionego agenta.
-  \item \texttt{FAILED}: błąd kwoty lub waluty, operatora albo finalizacji;
-    szczegóły znajdują się w \texttt{statusMessage}.
-\end{itemize}
-Są to statusy wyniku biznesowego, a nie kody HTTP.
-Błędy walidacji struktury żądania i brak rezerwacji są zgłaszane wyjątkami,
-nie jako \texttt{PaymentResult}.
+Status \texttt{DENIED} oznacza odmowę przyjęcia płatności.
+Status \texttt{FAILED} oznacza błąd żądania lub przetwarzania;
+pole \texttt{statusMessage} opisuje przyczynę.
 
-\subsubsection{Walidacja i wybór strategii}
+\begin{center}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+Kod HTTP & Znaczenie dla klienta \\
+\midrule
+200 & Płatność zakończona, rezerwacja opłacona. \\
+400 & Niepoprawne dane, kwota, waluta lub nieobsługiwana rezerwacja. \\
+404 & Rezerwacja nie istnieje. \\
+409 & Zgłoszony konflikt ze stanem danych. \\
+422 & Odmowa płatności, np. brak autoryzacji. \\
+500 & Błąd realizacji płatności lub jej ostatecznego zarejestrowania. \\
+\bottomrule
+\end{tabularx}
+\end{center}
 
-\texttt{PaymentValidator} sprawdza m.in. niepuste pola rezerwacji, kwoty
- i waluty, nieujemną kwotę dziesiętną, obecność czasu oraz dokładnie jeden
-obiekt szczegółów zgodny z \texttt{paymentMethod}.
-Kod BLIK musi zawierać sześć cyfr, a e-mail przejść walidację formatu.
-Dla gotówki wymagany jest niepusty kod agenta; dla karty m.in. numer,
-kod bezpieczeństwa złożony z trzech lub czterech cyfr, miesiąc od 1 do 12,
-rok większy od 1900 i nazwa właściciela.
+Odmowa lub odrzucenie przed realizacją nie rejestruje wpłaty
+ i nie oznacza rezerwacji jako opłaconej. Jeśli po przyjęciu płatności
+nie można zakończyć rejestracji, system wycofuje lokalny zapis wpłaty
+ i podejmuje próbę anulowania operacji. Błąd nadal oznacza
+niezakończony proces płatności, a nie opłaconą rezerwację.
 
-\texttt{PaymentAmountValidator} wymaga jednej waluty rezerwacji oraz
-kwoty równej jej wyliczonemu saldu. Rezerwacje bez pozycji
- i wielowalutowe nie są obsługiwane.
-\texttt{Money} normalizuje kwoty do dwóch miejsc dziesiętnych
- z zaokrągleniem \texttt{HALF\_UP}; zerowe saldo po płatności jest
-sprawdzane numerycznie przez \texttt{signum()}, niezależnie od skali
-\texttt{BigDecimal}.
-Obecna implementacja sumuje ceny zapisane w migawkach ofert:
-nie mnoży ich przez \texttt{OrderItem.quantity} i nie odejmuje wcześniejszych
-wpłat. Nie jest to obsługa płatności częściowych.
+\subsubsection{Zakres wersji demonstracyjnej}
 
-\texttt{PaymentFacade} filtruje wszystkie strategie według
-\texttt{isApplicableFor}. Dokładnie jedna musi pasować:
-brak dopasowania oznacza nieobsługiwaną płatność, a wiele dopasowań
---- błąd konfiguracji. Zwracana jest jedyna strategia z listy dopasowań,
-nie pierwsza strategia z listy wszystkich komponentów.
+Obsługa operatorów płatniczych jest symulowana. Nie należy używać
+rzeczywistych danych kart ani traktować potwierdzenia anulowania
+jako dowodu rzeczywistego zwrotu środków. Anulowanie karty, gotówki
+ i BLIK jest w tej wersji zawsze potwierdzane jako udane.
 
-\subsubsection{Finalizacja, kompensacja i ograniczenia}
-
-Po zaakceptowaniu płatności przez strategię fasada wywołuje
-\texttt{PaymentFinalizer}. Metoda transakcyjna najpierw zapisuje
-płatność, a następnie zmienia rezerwację z \texttt{RESERVED} na
-\texttt{PAID}. Błąd zmiany statusu powoduje wycofanie zapisu płatności.
-Szczegóły wybranej metody są zapisywane jako JSON bez opakowania
-\texttt{PaymentDetails}; czas jest przechowywany jako liczba milisekund
-od epoki. Wyszukiwanie po rezerwacji porządkuje wyniki po czasie i ID.
-
-Operacja strategii poprzedza lokalną transakcję bazodanową.
-Jeśli finalizacja zawiedzie, fasada próbuje wykonać
-\texttt{cancelPayment}. Wynik \texttt{FAILED} zawiera przyczynę
-finalizacji, a przy nieudanej kompensacji także przyczynę anulowania.
-Nie jest to transakcja rozproszona gwarantująca zwrot środków.
-
-\begin{itemize}
-  \item BLIK jest symulatorem: \texttt{111111} oznacza sukces,
-    \texttt{222222} brak autoryzacji w czasie, \texttt{333333} wygaśnięcie,
-    \texttt{444444} niedostępność operatora; inne kody oznaczają odmowę.
-  \item Gotówka wymaga jednego sprzedawcy w rezerwacji. Kod agenta musi
-    zaczynać się od nazwy sprzedawcy. Jest to uproszczona reguła,
-    nie rzeczywisty mechanizm uwierzytelniania.
-  \item Obsługa kart używa lokalnego symulatora bramki.
-    Anulowanie karty nie jest zaimplementowane i zgłasza
-    \texttt{UnsupportedOperationException}.
-  \item Anulowanie BLIK i gotówki zwraca sukces bez komunikacji
-    z zewnętrznym operatorem.
-  \item Repozytorium serializuje szczegóły karty, w tym kod bezpieczeństwa.
-    To ograniczenie demonstracyjnej implementacji: nie należy używać
-    rzeczywistych danych kart ani traktować jej jako gotowej do produkcji.
-\end{itemize}
-
-\subsubsection{Testy płatności}
-
-\texttt{PaymentFacadeTest} obejmuje dziesięć testów jednostkowych:
-kolejność operacji, błędy walidacji i operatora, odmowę, kompensację
-oraz brak, wielokrotność i wybór dopasowanej strategii.
-\texttt{PaymentRepositoryTest} sprawdza m.in. zapis i odczyt
-trzech metod płatności, kolejność wyników i klucz obcy rezerwacji.
-
-\texttt{PaymentIntegrationTest} uruchamia rzeczywiste komponenty
-Spring Boot i osobną bazę SQLite. Pięć scenariuszy obejmuje:
-\begin{enumerate}
-  \item poprawną płatność BLIK od kontrolera do bazy,
-  \item odrzucenie innej waluty bez zmiany danych,
-  \item odrzucenie niepoprawnego kodu BLIK,
-  \item wspólne zatwierdzenie płatności i statusu rezerwacji,
-  \item wycofanie zapisu płatności przy niedozwolonej zmianie statusu.
-\end{enumerate}
-Testy integracyjne wywołują bezpośrednio komponent kontrolera,
-nie sprawdzają routingu HTTP ani serializacji żądań i odpowiedzi.
-Testy transakcji nie mają transakcji otaczającej cały test, dzięki czemu
-sprawdzają granicę transakcyjną rzeczywistego finalizatora.
-
-Uruchomienie testów płatności:
-\begin{verbatim}
-./gradlew test --tests 'pl.edu.uj.student.wzorceprojektowe.payment.*'
-\end{verbatim}
-Budowanie dokumentacji: \texttt{./gradlew buildDocs}.
-Dodanie testów do repozytorium nie stanowi potwierdzenia ich wykonania.
+W symulacji BLIK kod \texttt{111111} oznacza sukces,
+\texttt{222222} brak autoryzacji w czasie, \texttt{333333} wygaśnięcie
+kodu, a \texttt{444444} niedostępność operatora. Pozostałe
+sześciocyfrowe kody powodują odmowę.

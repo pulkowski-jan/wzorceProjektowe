@@ -34,9 +34,7 @@ class PaymentFacadeTest {
   @Test
   void successfulPaymentIsValidatedChargedAndFinalizedInOrder() {
     when(strategy.handle(payment, reservation)).thenReturn(PaymentResult.success());
-
     assertThat(facade.handlePayment(payment)).isEqualTo(PaymentResult.success());
-
     var order = inOrder(reservations, amounts, strategy, finalizer);
     order.verify(reservations).findById("reservation-1");
     order.verify(amounts).validateAmounts(payment, reservation);
@@ -50,9 +48,8 @@ class PaymentFacadeTest {
   void invalidAmountStopsBeforeChargingOrFinalizing() {
     doThrow(new RequestValidationException("Amount mismatch"))
         .when(amounts).validateAmounts(payment, reservation);
-
-    assertThat(facade.handlePayment(payment))
-        .isEqualTo(PaymentResult.failure("Amount mismatch"));
+    assertThatThrownBy(() -> facade.handlePayment(payment))
+        .isInstanceOf(RequestValidationException.class).hasMessage("Amount mismatch");
     verifyNoInteractions(strategy, finalizer);
   }
 
@@ -60,7 +57,6 @@ class PaymentFacadeTest {
   void deniedPaymentIsReturnedWithoutFinalizationOrCancellation() {
     PaymentResult denied = PaymentResult.denial("Not authorised");
     when(strategy.handle(payment, reservation)).thenReturn(denied);
-
     assertThat(facade.handlePayment(payment)).isSameAs(denied);
     verifyNoInteractions(finalizer);
     verify(strategy, never()).cancelPayment(any());
@@ -69,7 +65,6 @@ class PaymentFacadeTest {
   @Test
   void gatewayExceptionBecomesFailureWithoutFinalization() {
     when(strategy.handle(payment, reservation)).thenThrow(new IllegalStateException("Offline"));
-
     assertThat(facade.handlePayment(payment)).isEqualTo(PaymentResult.failure("Offline"));
     verifyNoInteractions(finalizer);
     verify(strategy, never()).cancelPayment(any());
@@ -80,7 +75,6 @@ class PaymentFacadeTest {
     when(strategy.handle(payment, reservation)).thenReturn(PaymentResult.success());
     doThrow(new IllegalStateException("Database unavailable")).when(finalizer).finalize(payment);
     when(strategy.cancelPayment(payment)).thenReturn(PaymentResult.success());
-
     assertThat(facade.handlePayment(payment))
         .isEqualTo(PaymentResult.failure("Payment cancelled, due to: Database unavailable"));
     var order = inOrder(strategy, finalizer);
@@ -94,7 +88,6 @@ class PaymentFacadeTest {
     when(strategy.handle(payment, reservation)).thenReturn(PaymentResult.success());
     doThrow(new IllegalStateException("Database unavailable")).when(finalizer).finalize(payment);
     when(strategy.cancelPayment(payment)).thenReturn(PaymentResult.failure("Refund rejected"));
-
     assertThat(facade.handlePayment(payment)).isEqualTo(PaymentResult.failure(
         "Payment failed, due to: Database unavailable. Subsequent cancel failed due to: Refund rejected."));
   }
@@ -104,7 +97,6 @@ class PaymentFacadeTest {
     when(strategy.handle(payment, reservation)).thenReturn(PaymentResult.success());
     doThrow(new IllegalStateException("Database unavailable")).when(finalizer).finalize(payment);
     when(strategy.cancelPayment(payment)).thenThrow(new IllegalStateException("Refund offline"));
-
     assertThat(facade.handlePayment(payment)).isEqualTo(PaymentResult.failure(
         "Payment failed, due to: Database unavailable. Subsequent cancel failed due to: Refund offline."));
   }
@@ -112,10 +104,8 @@ class PaymentFacadeTest {
   @Test
   void unsupportedPaymentIsRejectedBeforeCharging() {
     when(strategy.isApplicableFor(payment)).thenReturn(false);
-
     assertThatThrownBy(() -> facade.handlePayment(payment))
-        .isInstanceOf(RequestValidationException.class)
-        .hasMessage("Provided payment is unsupported");
+        .isInstanceOf(RequestValidationException.class).hasMessage("Provided payment is unsupported");
     verify(strategy, never()).handle(any(), any());
     verifyNoInteractions(finalizer);
   }
@@ -125,7 +115,6 @@ class PaymentFacadeTest {
     PaymentStrategy other = mock(PaymentStrategy.class);
     when(other.isApplicableFor(payment)).thenReturn(true);
     facade = new PaymentFacade(reservations, amounts, List.of(strategy, other), finalizer);
-
     assertThatThrownBy(() -> facade.handlePayment(payment))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("multiple applicable payment strategies");
@@ -140,7 +129,6 @@ class PaymentFacadeTest {
     when(unsupported.isApplicableFor(payment)).thenReturn(false);
     when(strategy.handle(payment, reservation)).thenReturn(PaymentResult.success());
     facade = new PaymentFacade(reservations, amounts, List.of(unsupported, strategy), finalizer);
-
     assertThat(facade.handlePayment(payment)).isEqualTo(PaymentResult.success());
     verify(strategy).handle(payment, reservation);
     verify(unsupported, never()).handle(any(), any());

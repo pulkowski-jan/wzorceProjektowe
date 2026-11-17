@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.edu.uj.student.wzorceprojektowe.payment.model.PaymentResult;
 import pl.edu.uj.student.wzorceprojektowe.payment.service.strategy.PaymentStrategy;
-import pl.edu.uj.student.wzorceprojektowe.reservation.exception.ReservationNotFoundException;
 import pl.edu.uj.student.wzorceprojektowe.reservation.service.ReservationService;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Payment;
@@ -20,12 +19,8 @@ public class PaymentFacade {
   private final PaymentFinalizer paymentFinalizer;
 
   public PaymentResult handlePayment(Payment payment) {
-    Reservation reservation = findReservation(payment);
-    try {
-      paymentAmountValidator.validateAmounts(payment, reservation);
-    } catch (Exception e) {
-      return PaymentResult.failure(e.getMessage());
-    }
+    Reservation reservation = reservationService.findById(payment.reservationId());
+    paymentAmountValidator.validateAmounts(payment, reservation);
     PaymentStrategy paymentStrategy = resolvePaymentStrategy(payment);
     PaymentResult paymentResult;
     try {
@@ -44,17 +39,6 @@ public class PaymentFacade {
     }
   }
 
-  private Reservation findReservation(Payment payment) {
-    Reservation reservation;
-    try {
-      reservation = reservationService.findById(payment.reservationId());
-    } catch (ReservationNotFoundException e) {
-      throw new RequestValidationException(
-          "Cannot pay for non-existent reservation: " + payment.reservationId());
-    }
-    return reservation;
-  }
-
   private PaymentResult cancelPayment(
       Payment payment, Exception paymentFinalizationError, PaymentStrategy paymentStrategy) {
     PaymentResult cancelResult;
@@ -66,11 +50,10 @@ public class PaymentFacade {
     if (cancelResult.successfull()) {
       return PaymentResult.failure(
           "Payment cancelled, due to: " + paymentFinalizationError.getMessage());
-    } else {
-      return PaymentResult.failure(
-          "Payment failed, due to: %s. Subsequent cancel failed due to: %s."
-              .formatted(paymentFinalizationError.getMessage(), cancelResult.statusMessage()));
     }
+    return PaymentResult.failure(
+        "Payment failed, due to: %s. Subsequent cancel failed due to: %s."
+            .formatted(paymentFinalizationError.getMessage(), cancelResult.statusMessage()));
   }
 
   private PaymentStrategy resolvePaymentStrategy(Payment payment) {

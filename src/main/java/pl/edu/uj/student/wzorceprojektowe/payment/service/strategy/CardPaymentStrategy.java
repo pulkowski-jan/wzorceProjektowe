@@ -12,7 +12,6 @@ import pl.edu.uj.student.wzorceprojektowe.shared.model.Reservation;
 @Service
 @RequiredArgsConstructor
 class CardPaymentStrategy implements PaymentStrategy {
-
   private final CardPaymentAdapter cardPaymentAdapter;
 
   @Override
@@ -38,6 +37,6 @@ class CardPaymentStrategy implements PaymentStrategy {
 
   @Override
   public PaymentResult cancelPayment(Payment payment) {
-    throw new UnsupportedOperationException("Payment is not yet supported");
+    return PaymentResult.success();
   }
 }

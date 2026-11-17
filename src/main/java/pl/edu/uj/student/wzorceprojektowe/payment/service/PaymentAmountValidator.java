@@ -1,6 +1,5 @@
 package pl.edu.uj.student.wzorceprojektowe.payment.service;
 
-import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationException;
@@ -24,7 +23,7 @@ public class PaymentAmountValidator {
           "Currency mismatch. Payment: %s, Reservation: %s"
               .formatted(payment.currency(), reservationCurrency));
     }
-    if (!balanceAfterPayment.amount().equals(BigDecimal.ZERO)) {
+    if (balanceAfterPayment.amount().signum() != 0) {
       throw new RequestValidationException(
           "Payment amount: %s does not match reservation balance: %s"
               .formatted(paymentAmount, reservationBalance));

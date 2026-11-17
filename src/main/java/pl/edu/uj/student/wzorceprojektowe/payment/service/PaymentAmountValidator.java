@@ -7,6 +7,7 @@ import pl.edu.uj.student.wzorceprojektowe.shared.exception.RequestValidationExce
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Money;
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Payment;
 import pl.edu.uj.student.wzorceprojektowe.shared.model.Reservation;
+import pl.edu.uj.student.wzorceprojektowe.shared.model.ReservationStatus;
 
 @Service
 public class PaymentAmountValidator {
@@ -31,18 +32,23 @@ public class PaymentAmountValidator {
 
   private static Money calculateReservationBalance(Reservation reservation, String currency) {
     return reservation.items().stream()
+        .filter(item -> item.orderItemReservationStatus() == ReservationStatus.RESERVED)
         .map(item -> item.offerSnapshot().price().multiply(BigDecimal.valueOf(item.quantity())))
         .reduce(Money.zero(currency), Money::add);
   }
 
   private String findCurrency(Reservation reservation) {
-    List<String> currencies = reservation.items().stream()
-        .map(item -> item.offerSnapshot().price().currency()).distinct().toList();
+    List<String> currencies =
+        reservation.items().stream()
+            .map(item -> item.offerSnapshot().price().currency())
+            .distinct()
+            .toList();
     if (currencies.isEmpty()) {
       throw new RequestValidationException("Cannot pay for non-priced reservation.");
     }
     if (currencies.size() > 1) {
-      throw new RequestValidationException("Payment for multi-currency reservation is not supported");
+      throw new RequestValidationException(
+          "Payment for multi-currency reservation is not supported");
     }
     return currencies.getFirst();
   }

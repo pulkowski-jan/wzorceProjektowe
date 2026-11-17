@@ -2,7 +2,6 @@ package pl.edu.uj.student.wzorceprojektowe.reservation;
 
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -501,7 +500,6 @@ class BookingIntegrationTest {
   }
 
   @Test
-  @Disabled
   void statusTransitionsArePersistedAndVisibleThroughTheApi() throws Exception {
     JsonNode created =
         response(post("/reservations"), basket(createClient(), item(createOffer(2), 1)), 200);
@@ -513,7 +511,18 @@ class BookingIntegrationTest {
     assertThat(paid.createTimestamp()).isEqualTo(Instant.parse(created.get("createTimestamp").asString()));
     JsonNode fetched = response(get("/reservations/{id}", id), null, 200);
     assertThat(fetched.get("status").asString()).isEqualTo("PAID");
-    assertThat(fetched.get("items")).isEqualTo(created.get("items"));
+    assertThat(paid.items()).allSatisfy(item ->
+        assertThat(item.orderItemReservationStatus()).isEqualTo(ReservationStatus.PAID));
+    JsonNode originalLine = created.get("items").get(0);
+    JsonNode paidLine = fetched.get("items").get(0);
+    assertThat(fetched.get("items")).hasSize(created.get("items").size());
+    assertThat(paidLine.get("orderItemReservationStatus").asString()).isEqualTo("PAID");
+    for (String field : List.of("lineId", "offerSnapshot", "quantity", "participants")) {
+      assertThat(paidLine.get(field)).isEqualTo(originalLine.get(field));
+    }
+    assertThat(Instant.parse(paidLine.get("timestamp").asString()))
+        .isEqualTo(paid.lastModifiedTimestamp());
+    assertThat(reservations.findById(id)).contains(paid);
     assertThat(fetched.get("createTimestamp")).isEqualTo(created.get("createTimestamp"));
     assertThat(Instant.parse(fetched.get("lastModifiedTimestamp").asString()))
         .isAfterOrEqualTo(Instant.parse(created.get("createTimestamp").asString()));
@@ -523,7 +532,6 @@ class BookingIntegrationTest {
   }
 
   @Test
-  @Disabled
   void invalidStatusTransitionIsRejectedAndLeavesReservationUntouched() throws Exception {
     JsonNode created =
         response(post("/reservations"), basket(createClient(), item(createOffer(2), 1)), 200);
@@ -602,7 +610,6 @@ class BookingIntegrationTest {
   }
 
   @Test
-  @Disabled
   void concurrentStatusChangesCannotBothSucceed() throws Exception {
     String id =
         response(post("/reservations"), basket(createClient(), item(createOffer(1), 1)), 200)
@@ -842,7 +849,6 @@ class BookingIntegrationTest {
   }
 
   @Test
-  @Disabled
   void cancellingTwiceGivesTicketsBackOnlyOnce() throws Exception {
     String offer = createOffer(5);
     String id = reserve(createClient(), item(offer, 2));
@@ -855,7 +861,6 @@ class BookingIntegrationTest {
   }
 
   @Test
-  @Disabled
   void racingCancellationsGiveTicketsBackExactlyOnce() throws Exception {
     String offer = createOffer(5);
     String id = reserve(createClient(), item(offer, 2));
@@ -914,7 +919,6 @@ class BookingIntegrationTest {
   }
 
   @Test
-  @Disabled
   void cancellationsAndNewReservationsNeverOversellTheOffer() throws Exception {
     String offer = createOffer(4);
     String client = createClient();

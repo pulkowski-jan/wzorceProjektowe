@@ -41,11 +41,11 @@ REST API do rezerwowania biletów na wydarzenia (koncerty spektakle itp.)
 
 ## Stany i Płatności
 
-- [ ] Księgowanie transakcji płatniczych
+- [x] Księgowanie transakcji płatniczych
 
       Stworzyć algorytm wyliczania aktualnego salda rezerwacji.
 
-- [ ] Automatyczne potwierdzanie zamówień po płatności
+- [x] Automatyczne potwierdzanie zamówień po płatności
 
        Obsłużyć zdarzenia finansowe i automatyczną zmianę stanu rezerwacji na opłaconą po zarejestrowaniu pełnej wpłaty.
 

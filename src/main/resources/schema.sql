@@ -55,3 +55,5 @@ CREATE TABLE payment
 );
 
 CREATE INDEX reservation_client_id_idx ON reservation (client_id);
+
+CREATE INDEX payment_reservation_id_idx ON payment (reservation_id);

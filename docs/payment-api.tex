@@ -1,0 +1,133 @@
+\subsubsection{Opłacenie rezerwacji}
+\label{api:payment}
+
+Klient opłaca istniejącą rezerwację przez \texttt{POST /payment/pay}.
+Dostępne metody to karta, gotówka i BLIK. System nadaje płatności
+unikalny identyfikator i czas rejestracji. Wartości tych pól przesłane
+przez klienta są ignorowane; nie trzeba ich podawać w żądaniu.
+
+Przykład dla rezerwacji o wartości 30,00 PLN:
+\begin{verbatim}
+{
+  "reservationId": "existing-reservation-id",
+  "amount": "30.00",
+  "currency": "PLN",
+  "paymentDetails": {
+    "paymentMethod": "BLIK",
+    "blikPayment": {
+      "blikCode": "111111",
+      "email": "buyer@example.org"
+    }
+  }
+}
+\end{verbatim}
+Identyfikator należy zastąpić identyfikatorem rzeczywistej rezerwacji.
+
+\subsubsection{Zasady rozliczenia}
+
+Kwota musi odpowiadać pełnej wartości rezerwacji. Wartość każdej
+pozycji to cena jednostkowa z chwili rezerwacji pomnożona przez liczbę
+sztuk; kwota do zapłaty jest sumą wartości wszystkich pozycji.
+Przykładowo trzy bilety po 10,00 PLN wymagają płatności 30,00 PLN.
+Wpłata mniejsza lub większa od tej wartości jest odrzucana.
+
+Wszystkie pozycje muszą mieć tę samą walutę, zgodną z walutą wpłaty.
+Nie można opłacić pustej rezerwacji ani rezerwacji wielowalutowej.
+Kwoty są zaokrąglane do dwóch miejsc dziesiętnych, z zaokrągleniem
+połówek w górę. Płatności częściowe nie są obsługiwane.
+
+Należy wskazać jedną metodę i wyłącznie odpowiadające jej szczegóły.
+Dla BLIK wymagany jest sześciocyfrowy kod i adres e-mail.
+Gotówkę obsługuje agent sprzedawcy; rezerwacja musi dotyczyć jednego
+sprzedawcy, a kod agenta zaczynać się od jego nazwy.
+Płatność kartą wymaga numeru, kodu bezpieczeństwa, miesiąca i roku
+ważności oraz nazwy właściciela; adres rozliczeniowy jest opcjonalny.
+
+\subsubsection{Wynik płatności}
+
+Po poprawnym opłaceniu system rejestruje wpłatę i oznacza rezerwację
+jako \texttt{PAID}. Odpowiedź zawiera:
+\begin{verbatim}
+{
+  "status": "SUCCESSFUL",
+  "statusMessage": ""
+}
+\end{verbatim}
+Status \texttt{DENIED} oznacza odmowę przyjęcia płatności.
+Status \texttt{FAILED} oznacza błąd żądania lub przetwarzania;
+pole \texttt{statusMessage} opisuje przyczynę, dla udanej płatności jest pustym tekstem.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+Kod HTTP & Znaczenie dla klienta \\
+\midrule
+200 & Płatność zakończona, rezerwacja opłacona. \\
+400 & Niepoprawne dane, kwota, waluta lub nieobsługiwana rezerwacja. \\
+404 & Rezerwacja nie istnieje. \\
+409 & Zgłoszony konflikt ze stanem danych. \\
+422 & Odmowa płatności, np. brak autoryzacji. \\
+500 & Błąd realizacji płatności lub jej ostatecznego zarejestrowania. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Odmowa lub odrzucenie przed realizacją nie rejestruje wpłaty
+ i nie oznacza rezerwacji jako opłaconej. Jeśli po przyjęciu płatności
+nie można jej zarejestrować, system wycofuje lokalny zapis wpłaty
+ i podejmuje próbę anulowania operacji. Błąd anulowania oznacza
+niezakończony proces płatności, a nie opłaconą rezerwację.
+
+\subsubsection{Zakres wersji demonstracyjnej}
+
+Obsługa operatorów płatniczych jest symulowana. Nie należy używać
+rzeczywistych danych kart ani traktować potwierdzenia anulowania
+jako dowodu rzeczywistego zwrotu środków. Anulowanie karty, gotówki
+ i BLIK jest w tej wersji zawsze potwierdzane jako udane.
+
+W symulacji BLIK kod \texttt{111111} oznacza sukces,
+\texttt{222222} brak autoryzacji w czasie, \texttt{333333} wygaśnięcie
+kodu, a \texttt{444444} niedostępność operatora. Pozostałe
+sześciocyfrowe kody powodują odmowę.
+
+\subsubsection{Karty demonstracyjne}
+
+Do sprawdzenia płatności kartą służą wyłącznie poniższe dane fikcyjne.
+W obu przypadkach należy podać miesiąc ważności 9 i rok 2027
+(09/2027) oraz dowolną niepustą nazwę właściciela.
+\begin{center}
+\begin{tabularx}{\textwidth}{lllX}
+\toprule
+Numer karty & Kod & Ważność & Oczekiwany wynik \\
+\midrule
+\texttt{1111111111111111} & \texttt{111} & 09/2027 &
+Udana autoryzacja i płatność; przy prawidłowej rezerwacji i kwocie
+wynik \texttt{SUCCESSFUL}, HTTP 200. \\
+\texttt{1234123412341234} & \texttt{1234} & 09/2027 &
+Udana autoryzacja, następnie niedostępność operatora;
+wynik \texttt{FAILED}, HTTP 500. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Oba scenariusze wymagają, aby bieżąca data systemowa była wcześniejsza
+niż 1 października 2027 r. Od tej daty obie karty są odrzucane jako
+przeterminowane (\texttt{DENIED}, HTTP 422). Inne zestawy numeru,
+kodu i daty ważności również powodują odmowę autoryzacji,
+o ile żądanie przejdzie wcześniejszą walidację.
+
+Przykładowe szczegóły dla karty z udaną płatnością:
+\begin{verbatim}
+"paymentDetails": {
+  "paymentMethod": "CARD",
+  "cardPayment": {
+    "cardNumber": "1111111111111111",
+    "securityCode": "111",
+    "expirationMonth": 9,
+    "expirationYear": 2027,
+    "name": "Jan Testowy"
+  }
+}
+\end{verbatim}
+Fragment zastępuje pole \texttt{paymentDetails} w przykładzie żądania.
+Kwota i waluta nadal muszą odpowiadać pełnej wartości rezerwacji.

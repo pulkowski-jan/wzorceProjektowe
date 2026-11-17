@@ -1,5 +1,7 @@
 package pl.edu.uj.student.wzorceprojektowe.shared.model;
 
+import lombok.NonNull;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
@@ -43,6 +45,15 @@ public record Money(String currency, BigDecimal amount) {
   public Money multiply(BigDecimal factor) {
     Objects.requireNonNull(factor, "Factor must not be null");
     return new Money(currency, amount.multiply(factor));
+  }
+
+  @Override
+  public @NonNull String toString() {
+    return "%s %s".formatted(getAmountAsString(), currency);
+  }
+
+  public static Money zero(String currency) {
+    return new Money(currency, BigDecimal.ZERO);
   }
 
   private void requireSameCurrency(Money other) {

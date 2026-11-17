@@ -84,6 +84,11 @@ public class ReservationService {
 
   @Transactional
   public Reservation changeItemsStatus(String reservationId, ReservationStatus reservationStatus) {
+    // Take SQLite's write lock before reading, so concurrent transitions cannot
+    // validate the same stale state or fail while upgrading a read transaction.
+    if (!repository.lockForUpdate(reservationId)) {
+      throw new ReservationNotFoundException("Reservation not found: " + reservationId);
+    }
     Reservation reservation = findById(reservationId);
     Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     List<OrderItem> updatedItems =
@@ -111,9 +116,9 @@ public class ReservationService {
   private static OrderItem updateItemStatus(
       ReservationStatus reservationStatus, OrderItem item, Instant now) {
     if (!item.orderItemReservationStatus().canChangeTo(reservationStatus)) {
-      throw new IllegalStateException(
-          "Cannot pay for item %s with status %s"
-              .formatted(item.lineId(), item.orderItemReservationStatus()));
+      throw new RequestConflictException(
+          "Item %s status cannot be changed from %s to %s"
+              .formatted(item.lineId(), item.orderItemReservationStatus(), reservationStatus));
     }
     return new OrderItem(
         item.lineId(),

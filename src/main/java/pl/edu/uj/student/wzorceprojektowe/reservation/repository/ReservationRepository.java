@@ -71,6 +71,11 @@ public class ReservationRepository {
     return jdbc.update(UPDATE_STATUS_TEMPLATE.formatted(placeholders), args.toArray()) == 1;
   }
 
+  /** Acquire SQLite's transaction-scoped write lock without changing the version. */
+  public boolean lockForUpdate(String id) {
+    return jdbc.update("UPDATE reservation SET id = id WHERE id = ?", id) == 1;
+  }
+
   public boolean update(Reservation reservation) {
     return jdbc.update(
             UPDATE_TEMPLATE,

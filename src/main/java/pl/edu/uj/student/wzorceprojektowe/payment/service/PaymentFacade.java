@@ -84,6 +84,6 @@ public class PaymentFacade {
           "Server misconfiguration: multiple applicable payment strategies for payment "
               + payment.id());
     }
-    return paymentStrategies.getFirst();
+    return applicablePaymentStrategies.getFirst();
   }
 }

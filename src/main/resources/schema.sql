@@ -22,7 +22,7 @@ CREATE TABLE offer
     description TEXT    NOT NULL,
     quantity    INTEGER NOT NULL CHECK (quantity >= 0),
     version     INTEGER NOT NULL CHECK (version >= 0),
-    participant_mode TEXT NOT NULL DEFAULT NONE CHECK (participant_mode IN ('NONE', 'NAMED', 'GROUP'))
+    participant_mode TEXT NOT NULL DEFAULT 'NONE' CHECK (participant_mode IN ('NONE', 'NAMED', 'GROUP'))
 );
 
 CREATE TABLE client
@@ -45,11 +45,13 @@ CREATE TABLE reservation
 
 CREATE TABLE payment
 (
-    id                TEXT PRIMARY KEY,
-    reservation_id    TEXT    NOT NULL REFERENCES reservation (id),
-    amount            TEXT    NOT NULL,
-    currency          TEXT    NOT NULL,
-    payment_timestamp INTEGER NOT NULL
+    id                      TEXT    PRIMARY KEY,
+    reservation_id          TEXT    NOT NULL REFERENCES reservation (id),
+    amount                  TEXT    NOT NULL,
+    currency                TEXT    NOT NULL,
+    payment_method          TEXT    NOT NULL CHECK (payment_method IN ('CARD', 'CASH', 'BLIK')),
+    payment_method_details  TEXT    NOT NULL, -- JSON dump of the details object for payment_method
+    payment_timestamp       INTEGER NOT NULL
 );
 
 CREATE INDEX reservation_client_id_idx ON reservation (client_id);

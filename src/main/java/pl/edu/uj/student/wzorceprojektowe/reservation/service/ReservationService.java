@@ -90,7 +90,6 @@ public class ReservationService {
       quantities.merge(item.offerSnapshot().id(), item.quantity(), Integer::sum);
     }
     quantities.forEach(offerChangeService::releaseQuantity);
-    return findById(id);
   }
 
   private static @NonNull Integer quantity(CreateReservationRequest.Item item) {

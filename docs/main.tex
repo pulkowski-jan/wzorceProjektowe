@@ -286,6 +286,10 @@ API sprzedawców jest częścią modułu katalogu ofert. Ścieżka bazowa to \te
     \hline
     currency & TEXT & NOT NULL & Trzyliterowy kod waluty & \texttt{currency} \\
     \hline
+    payment\_method & TEXT & NOT NULL & Metoda płatności -- jedno z \texttt{CARD}, \texttt{CASH}, \texttt{BLIK} \\
+    \hline
+    payment\_method\_details & TEXT & NOT NULL & Zrzut JSON obiektu szczegółów płatności odpowiadającego wartości pola paymentMethod \\
+    \hline
     payment\_timestamp & INTEGER & NOT NULL & Czas rejestracji wpłaty & \texttt{paymentTimestamp} \\
     \hline
   \end{tabularx}

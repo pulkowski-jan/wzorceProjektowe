@@ -558,6 +558,47 @@ class BookingIntegrationTest {
   }
 
   @Test
+  void databaseRejectsUnknownPaymentMethodAndStoresPaymentMethodDetails() throws Exception {
+    String id =
+        response(post("/reservations"), basket(createClient(), item(createOffer(1), 1)), 200)
+            .get("id")
+            .asString();
+    assertThatThrownBy(
+            () ->
+                jdbc.update(
+                    """
+                        INSERT INTO payment
+                          (id, reservation_id, amount, currency, payment_method,
+                           payment_method_details, payment_timestamp)
+                        VALUES (?, ?, '10.00', 'PLN', 'GOLD', '{}', 0)
+                        """,
+                    UUID.randomUUID().toString(),
+                    id))
+        .isInstanceOf(DataAccessException.class);
+    jdbc.update(
+        """
+            INSERT INTO payment
+              (id, reservation_id, amount, currency, payment_method,
+               payment_method_details, payment_timestamp)
+            VALUES (?, ?, '10.00', 'PLN', 'CARD', '{"cardNumber":"4111111111111111"}', 0)
+            """,
+        UUID.randomUUID().toString(),
+        id);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT payment_method FROM payment WHERE reservation_id = ?",
+                String.class,
+                id))
+        .isEqualTo("CARD");
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT payment_method_details FROM payment WHERE reservation_id = ?",
+                String.class,
+                id))
+        .contains("4111111111111111");
+  }
+
+  @Test
   void concurrentStatusChangesCannotBothSucceed() throws Exception {
     String id =
         response(post("/reservations"), basket(createClient(), item(createOffer(1), 1)), 200)

@@ -6,9 +6,59 @@ Jeżeli typ pola nie jest podany to jest to string.
   "reservationId": "UUID opłacanej rezerwacji",
   "amount": "Kwota transakcji w formacie tekstowym",
   "currency": "Kod waluty",
+  "paymentDetails": "Szczegóły płatności zależne od metody -- obiekt PaymentDetails",
   "paymentTimestamp": "Czas rejestracji wpłaty"
 }
 \end{verbatim}
 \caption{Obiekt Payment}
 \label{schema:payment}
+\end{figure}
+\begin{figure}[H]
+Musi zostać podane dokładnie 1 pole z \texttt{cardPayment}, \texttt{cashPayment}, \texttt{blikPayment} -- to odpowiadające podanej metodzie płatności.
+\begin{verbatim}
+{
+  "paymentMethod": "Metoda Płatności -- jedno z (CARD, CASH, BLIK) -- String",
+  "cardPayment": "Szczegóły płatności kartą -- obiekt CardPaymentDetails",
+  "cashPayment": "Szczegóły płatności gotówką -- obiekt CashPaymentDetails",
+  "blikPayment": "Szczegóły płatności blikiem -- obiekt BlikPaymentDetails"
+}
+\end{verbatim}
+\caption{Obiekt PaymentDetails}
+\label{schema:paymentDetails}
+\end{figure}
+\begin{figure}[H]
+Jeżeli typ pola nie jest podany to jest to string.
+\begin{verbatim}
+{
+  "cardNumber": "Numer karty",
+  "securityCode": "3, lub 4 cyfrowy kod CVC/CVV",
+  "expirationMonth": "Miesiąc utraty ważności przez kartę -- liczba całkowita z zakresu [1, 12]",
+  "expirationYear": "Rok utraty ważności przez kartę -- liczba całkowita większa od 1900",
+  "name": "Imie i nazwisko właściciela karty",
+  "billingAddress": "Adres rozliczeniowy właścic karty (opcjonalny)"
+}
+\end{verbatim}
+\caption{Obiekt CardPaymentDetails}
+\label{schema:cardPaymentDetails}
+\end{figure}
+\begin{figure}[H]
+Jeżeli typ pola nie jest podany to jest to string.
+\begin{verbatim}
+{
+  "agentCode": "Kod agenta, który obsłużył płatność gotówką"
+}
+\end{verbatim}
+\caption{Obiekt CashPaymentDetails}
+\label{schema:cashPaymentDetails}
+\end{figure}
+\begin{figure}[H]
+Jeżeli typ pola nie jest podany to jest to string.
+\begin{verbatim}
+{
+  "blikCode": "6 cyfrowy kod BLIK",
+  "email": "Adres email płatnika"
+}
+\end{verbatim}
+\caption{Obiekt BlikPaymentDetails}
+\label{schema:blikPaymentDetails}
 \end{figure}

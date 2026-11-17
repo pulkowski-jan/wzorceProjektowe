@@ -8,8 +8,8 @@ import java.util.regex.Pattern;
 import org.springframework.util.StringUtils;
 
 public record ValidationPolicy<T>(Predicate<T> policyCheck, String failureMessage) {
-  public boolean isFailing(T offer) {
-    return !policyCheck.test(offer);
+  public boolean isFailing(T validated) {
+    return !policyCheck.test(validated);
   }
 
   public static <T, T2> ValidationPolicy<T> notNullPolicy(

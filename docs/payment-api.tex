@@ -50,9 +50,11 @@ jako \texttt{PAID}. Odpowiedź zawiera:
 \begin{verbatim}
 {
   "status": "SUCCESSFUL",
-  "statusMessage": null
+  "statusMessage": ""
 }
 \end{verbatim}
+Dla udanej płatności komunikat jest pustym tekstem, nie wartością
+\texttt{null}.
 Status \texttt{DENIED} oznacza odmowę przyjęcia płatności.
 Status \texttt{FAILED} oznacza błąd żądania lub przetwarzania;
 pole \texttt{statusMessage} opisuje przyczynę.
@@ -89,3 +91,45 @@ W symulacji BLIK kod \texttt{111111} oznacza sukces,
 \texttt{222222} brak autoryzacji w czasie, \texttt{333333} wygaśnięcie
 kodu, a \texttt{444444} niedostępność operatora. Pozostałe
 sześciocyfrowe kody powodują odmowę.
+
+\subsubsection{Karty demonstracyjne}
+
+Do sprawdzenia płatności kartą służą wyłącznie poniższe dane fikcyjne.
+W obu przypadkach należy podać miesiąc ważności 9 i rok 2027
+(09/2027) oraz dowolną niepustą nazwę właściciela.
+\begin{center}
+\begin{tabularx}{\textwidth}{lllX}
+\toprule
+Numer karty & Kod & Ważność & Oczekiwany wynik \\
+\midrule
+\texttt{1111111111111111} & \texttt{111} & 09/2027 &
+Udana autoryzacja i płatność; przy prawidłowej rezerwacji i kwocie
+wynik \texttt{SUCCESSFUL}, HTTP 200. \\
+\texttt{1234123412341234} & \texttt{1234} & 09/2027 &
+Udana autoryzacja, następnie niedostępność operatora;
+wynik \texttt{FAILED}, HTTP 500. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Oba scenariusze wymagają, aby bieżąca data systemowa była wcześniejsza
+niż 1 października 2027 r. Od tej daty obie karty są odrzucane jako
+przeterminowane (\texttt{DENIED}, HTTP 422). Inne zestawy numeru,
+kodu i daty ważności również powodują odmowę autoryzacji,
+o ile żądanie przejdzie wcześniejszą walidację.
+
+Przykładowe szczegóły dla karty z udaną płatnością:
+\begin{verbatim}
+"paymentDetails": {
+  "paymentMethod": "CARD",
+  "cardPayment": {
+    "cardNumber": "1111111111111111",
+    "securityCode": "111",
+    "expirationMonth": 9,
+    "expirationYear": 2027,
+    "name": "Jan Testowy"
+  }
+}
+\end{verbatim}
+Fragment zastępuje pole \texttt{paymentDetails} w przykładzie żądania.
+Kwota i waluta nadal muszą odpowiadać pełnej wartości rezerwacji.

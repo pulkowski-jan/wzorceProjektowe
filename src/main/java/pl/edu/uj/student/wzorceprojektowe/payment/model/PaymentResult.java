@@ -7,7 +7,7 @@ public record PaymentResult(PaymentStatus status, String statusMessage) {
     }
 
     public static PaymentResult success() {
-        return new PaymentResult(PaymentStatus.SUCCESSFUL, null);
+        return new PaymentResult(PaymentStatus.SUCCESSFUL, "");
     }
     public static PaymentResult failure(String reason) {
         return new PaymentResult(PaymentStatus.FAILED, reason);

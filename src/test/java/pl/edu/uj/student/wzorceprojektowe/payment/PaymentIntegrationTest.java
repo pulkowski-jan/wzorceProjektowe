@@ -7,7 +7,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -135,8 +134,12 @@ class PaymentIntegrationTest {
   }
 
   @Test
-  @Disabled
   void finalizerRollsBackInsertedPaymentWhenStatusTransitionFails() {
+    Reservation reserved = reservations.findById(RESERVATION_ID).orElseThrow();
+    reservations.storeItems(RESERVATION_ID, reserved.items().stream()
+        .map(item -> new OrderItem(item.lineId(), item.offerSnapshot(), item.quantity(),
+            item.timestamp(), item.participants(), ReservationStatus.PAID))
+        .toList());
     jdbc.update("UPDATE reservation SET status = 'PAID' WHERE id = ?", RESERVATION_ID);
     Payment payment = payment("30.00", "PLN", "111111");
     assertThatThrownBy(() -> finalizer.finalize(payment))

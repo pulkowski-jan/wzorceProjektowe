@@ -84,8 +84,6 @@ public class ReservationService {
 
   @Transactional
   public Reservation changeItemsStatus(String reservationId, ReservationStatus reservationStatus) {
-    // Take SQLite's write lock before reading, so concurrent transitions cannot
-    // validate the same stale state or fail while upgrading a read transaction.
     if (!repository.lockForUpdate(reservationId)) {
       throw new ReservationNotFoundException("Reservation not found: " + reservationId);
     }

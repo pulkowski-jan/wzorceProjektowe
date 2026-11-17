@@ -17,6 +17,6 @@ public class PaymentFinalizer {
     @Transactional
     public void finalize(Payment payment) {
         paymentRepository.insert(payment);
-        reservationService.changeStatus(payment.reservationId(), ReservationStatus.PAID);
+        reservationService.changeItemsStatus(payment.reservationId(), ReservationStatus.PAID);
     }
 }

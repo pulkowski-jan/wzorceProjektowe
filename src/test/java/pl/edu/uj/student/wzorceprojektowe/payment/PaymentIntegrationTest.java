@@ -43,7 +43,7 @@ class PaymentIntegrationTest {
     assertThat(reservations.insertForClient(RESERVATION_ID, "buyer", NOW)).isTrue();
     Offer offer = new Offer("offer-1", "Test offer", null, new Money("PLN", "10.00"), "Test", 3, 1);
     reservations.storeItems(RESERVATION_ID,
-        List.of(new OrderItem("line-1", offer, 3, NOW, List.of())));
+        List.of(new OrderItem("line-1", offer, 3, NOW, List.of(), ReservationStatus.RESERVED)));
   }
 
   @Test
@@ -135,6 +135,11 @@ class PaymentIntegrationTest {
 
   @Test
   void finalizerRollsBackInsertedPaymentWhenStatusTransitionFails() {
+    Reservation reserved = reservations.findById(RESERVATION_ID).orElseThrow();
+    reservations.storeItems(RESERVATION_ID, reserved.items().stream()
+        .map(item -> new OrderItem(item.lineId(), item.offerSnapshot(), item.quantity(),
+            item.timestamp(), item.participants(), ReservationStatus.PAID))
+        .toList());
     jdbc.update("UPDATE reservation SET status = 'PAID' WHERE id = ?", RESERVATION_ID);
     Payment payment = payment("30.00", "PLN", "111111");
     assertThatThrownBy(() -> finalizer.finalize(payment))

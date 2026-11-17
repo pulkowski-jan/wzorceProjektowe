@@ -505,13 +505,24 @@ class BookingIntegrationTest {
         response(post("/reservations"), basket(createClient(), item(createOffer(2), 1)), 200);
     String id = created.get("id").asString();
 
-    Reservation paid = service.changeStatus(id, ReservationStatus.PAID);
+    Reservation paid = service.changeItemsStatus(id, ReservationStatus.PAID);
 
     assertThat(paid.status()).isEqualTo(ReservationStatus.PAID);
     assertThat(paid.createTimestamp()).isEqualTo(Instant.parse(created.get("createTimestamp").asString()));
     JsonNode fetched = response(get("/reservations/{id}", id), null, 200);
     assertThat(fetched.get("status").asString()).isEqualTo("PAID");
-    assertThat(fetched.get("items")).isEqualTo(created.get("items"));
+    assertThat(paid.items()).allSatisfy(item ->
+        assertThat(item.orderItemReservationStatus()).isEqualTo(ReservationStatus.PAID));
+    JsonNode originalLine = created.get("items").get(0);
+    JsonNode paidLine = fetched.get("items").get(0);
+    assertThat(fetched.get("items")).hasSize(created.get("items").size());
+    assertThat(paidLine.get("orderItemReservationStatus").asString()).isEqualTo("PAID");
+    for (String field : List.of("lineId", "offerSnapshot", "quantity", "participants")) {
+      assertThat(paidLine.get(field)).isEqualTo(originalLine.get(field));
+    }
+    assertThat(Instant.parse(paidLine.get("timestamp").asString()))
+        .isEqualTo(paid.lastModifiedTimestamp());
+    assertThat(reservations.findById(id)).contains(paid);
     assertThat(fetched.get("createTimestamp")).isEqualTo(created.get("createTimestamp"));
     assertThat(Instant.parse(fetched.get("lastModifiedTimestamp").asString()))
         .isAfterOrEqualTo(Instant.parse(created.get("createTimestamp").asString()));
@@ -525,11 +536,11 @@ class BookingIntegrationTest {
     JsonNode created =
         response(post("/reservations"), basket(createClient(), item(createOffer(2), 1)), 200);
     String id = created.get("id").asString();
-    service.changeStatus(id, ReservationStatus.CANCELED);
+    service.changeItemsStatus(id, ReservationStatus.CANCELED);
 
-    assertThatThrownBy(() -> service.changeStatus(id, ReservationStatus.PAID))
+    assertThatThrownBy(() -> service.changeItemsStatus(id, ReservationStatus.PAID))
         .isInstanceOf(RequestConflictException.class);
-    assertThatThrownBy(() -> service.changeStatus(id, ReservationStatus.RESERVED))
+    assertThatThrownBy(() -> service.changeItemsStatus(id, ReservationStatus.RESERVED))
         .isInstanceOf(RequestConflictException.class);
 
     assertThat(response(get("/reservations/{id}", id), null, 200).get("status").asString())
@@ -542,7 +553,7 @@ class BookingIntegrationTest {
   @Test
   void changingStatusOfMissingReservationIsNotFound() {
     assertThatThrownBy(
-        () -> service.changeStatus(UUID.randomUUID().toString(), ReservationStatus.PAID))
+        () -> service.changeItemsStatus(UUID.randomUUID().toString(), ReservationStatus.PAID))
         .isInstanceOf(ReservationNotFoundException.class);
   }
 
@@ -613,7 +624,7 @@ class BookingIntegrationTest {
             executor.submit(() -> {
               start.await(10, TimeUnit.SECONDS);
               try {
-                service.changeStatus(id, target);
+                service.changeItemsStatus(id, target);
                 return true;
               } catch (RequestConflictException e) {
                 return false;
@@ -820,7 +831,7 @@ class BookingIntegrationTest {
     assertThat(stock(b)).isEqualTo(2);
     int versionA = offerVersion(a);
 
-    service.changeStatus(id, ReservationStatus.CANCELED);
+    service.changeItemsStatus(id, ReservationStatus.CANCELED);
 
     assertThat(stock(a)).isEqualTo(5);
     assertThat(stock(b)).isEqualTo(3);
@@ -832,7 +843,7 @@ class BookingIntegrationTest {
     String offer = createOffer(5);
     String id = reserve(createClient(), item(offer, 2));
 
-    service.changeStatus(id, ReservationStatus.PAID);
+    service.changeItemsStatus(id, ReservationStatus.PAID);
 
     assertThat(stock(offer)).isEqualTo(3);
   }
@@ -841,9 +852,9 @@ class BookingIntegrationTest {
   void cancellingTwiceGivesTicketsBackOnlyOnce() throws Exception {
     String offer = createOffer(5);
     String id = reserve(createClient(), item(offer, 2));
-    service.changeStatus(id, ReservationStatus.CANCELED);
+    service.changeItemsStatus(id, ReservationStatus.CANCELED);
 
-    assertThatThrownBy(() -> service.changeStatus(id, ReservationStatus.CANCELED))
+    assertThatThrownBy(() -> service.changeItemsStatus(id, ReservationStatus.CANCELED))
         .isInstanceOf(RequestConflictException.class);
 
     assertThat(stock(offer)).isEqualTo(5);
@@ -862,7 +873,7 @@ class BookingIntegrationTest {
             executor.submit(() -> {
               start.await(10, TimeUnit.SECONDS);
               try {
-                service.changeStatus(id, ReservationStatus.CANCELED);
+                service.changeItemsStatus(id, ReservationStatus.CANCELED);
                 return true;
               } catch (RequestConflictException e) {
                 return false;
@@ -889,7 +900,7 @@ class BookingIntegrationTest {
     String first = reserve(createClient(), item(offer, 2));
     response(post("/reservations"), basket(createClient(), item(offer, 1)), 409);
 
-    service.changeStatus(first, ReservationStatus.CANCELED);
+    service.changeItemsStatus(first, ReservationStatus.CANCELED);
 
     reserve(createClient(), item(offer, 2));
     assertThat(stock(offer)).isZero();
@@ -901,7 +912,7 @@ class BookingIntegrationTest {
     String id = reserve(createClient(), item(offer, 2));
     response(delete("/offer/{id}", offer), null, 200);
 
-    Reservation cancelled = service.changeStatus(id, ReservationStatus.CANCELED);
+    Reservation cancelled = service.changeItemsStatus(id, ReservationStatus.CANCELED);
 
     assertThat(cancelled.status()).isEqualTo(ReservationStatus.CANCELED);
     assertThat(count("offer")).isZero();
@@ -922,7 +933,7 @@ class BookingIntegrationTest {
         results.add(
             executor.submit(() -> {
               start.await(10, TimeUnit.SECONDS);
-              service.changeStatus(id, ReservationStatus.CANCELED);
+              service.changeItemsStatus(id, ReservationStatus.CANCELED);
               return true;
             }));
       }
